@@ -4,4 +4,3 @@ __pycache__/
 *.env
 myenv
 new_env
-.terraform/
