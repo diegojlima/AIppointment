@@ -1,3 +1,4 @@
+# ./functions/appointment-booking/src/main.py
 import json
 import boto3
 from datetime import datetime, timedelta
@@ -18,7 +19,7 @@ def get_llm():
             "temperature": 0.5,
             "top_p": 0.9
         },
-        region_name="us-east-1"  # Replace with your AWS region
+        region_name="us-west-2"  # Replace with your AWS region
     )
 
 def process_message(message):

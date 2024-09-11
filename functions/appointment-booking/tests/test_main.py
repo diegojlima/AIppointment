@@ -1,3 +1,4 @@
+# ./functions/appointment-booking/tests/test_main.py
 import pytest
 from moto import mock_dynamodb
 import boto3
@@ -14,7 +15,7 @@ def env_setup(monkeypatch):
 @pytest.fixture
 def dynamodb_table():
     with mock_dynamodb():
-        dynamodb = boto3.client('dynamodb', region_name='us-east-1')
+        dynamodb = boto3.client('dynamodb', region_name='us-west-2')
         dynamodb.create_table(
             TableName='test-table-name',
             KeySchema=[

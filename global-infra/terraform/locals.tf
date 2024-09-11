@@ -1,4 +1,4 @@
-# global-infra/terraform/locals.tf
+# ./global-infra/terraform/locals.tf
 
 locals {
   project_name = "appointment-system"

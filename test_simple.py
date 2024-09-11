@@ -1,10 +1,11 @@
+# ./test_simple.py
 import boto3
 from moto import mock_aws
 
 @mock_aws
 def test_my_dynamodb_function():
     # Setup your DynamoDB mock
-    dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+    dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
     
     # Create a DynamoDB table
     table = dynamodb.create_table(

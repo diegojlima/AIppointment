@@ -1,11 +1,11 @@
-# global-infra/terraform/backend.tf
+# ./global-infra/terraform/backend.tf
 
-# Backend configuration can be added here when needed
-# For example:
-# terraform {
-#   backend "s3" {
-#     bucket = "your-terraform-state-bucket"
-#     key    = "global-infra/terraform.tfstate"
-#     region = "us-west-2"
-#   }
-# }
+terraform {
+  backend "s3" {
+    bucket         = "delima-appointment-state-tf"
+    key            = "terraform.tfstate"
+    region         = "us-west-2"  # Use your preferred region
+    encrypt        = true
+    dynamodb_table = "terraform-state-lock"
+  }
+}
