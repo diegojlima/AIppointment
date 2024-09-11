@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Appointment Booking System
+
+Resources:
+  AppointmentBookingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/appointment-booking/
+      Handler: src.main.lambda_handler
+      Runtime: python3.8
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /book-appointment
+            Method: post
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: appointments-local
+
+  AppointmentsTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: appointments-local
+      PrimaryKey:
+        Name: PhoneNumber
+        Type: String
