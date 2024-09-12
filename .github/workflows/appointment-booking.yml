@@ -23,23 +23,40 @@ jobs:
   #       run: pytest functions/appointment-booking/tests/
 
   deploy_infrastructure:
-    # needs: test_appointment_booking
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.12'  # or your preferred Python version
+      
+      - name: Package Lambda Function
+        run: |
+          cd functions/appointment-booking
+          pip install --target ./package -r requirements.txt
+          cd package
+          zip -r ../../lambda_function.zip .
+          cd ..
+          zip -g ../lambda_function.zip src/*.py
+      
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
+      
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
+      
       - name: Terraform Init
         run: |
           cd infrastructure/global/terraform
           terraform init
+      
       - name: Terraform Apply
         run: |
           cd infrastructure/global/terraform
