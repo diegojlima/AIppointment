@@ -17,3 +17,5 @@ new_env
 # Crash log files
 crash.log
 crash.*.log
+
+lambda_function.zip

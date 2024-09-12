@@ -1,4 +1,4 @@
-# shared/terraform-modules/cloud_function/variables.tf
+# infrastructure/modules/cloud_function/variables.tf
 
 variable "function_name" {
   type        = string

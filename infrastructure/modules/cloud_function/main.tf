@@ -1,4 +1,4 @@
-# shared/terraform-modules/cloud_function/main.tf
+# infrastructure/modules/cloud_function/main.tf
 
 resource "aws_lambda_function" "function" {
   filename         = data.archive_file.lambda_zip.output_path

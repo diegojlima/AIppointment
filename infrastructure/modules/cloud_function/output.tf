@@ -1,4 +1,4 @@
-# shared/terraform-modules/cloud_function/output.tf
+# infrastructure/modules/cloud_function/output.tf
 
 output "function_name" {
   value       = aws_lambda_function.function.function_name

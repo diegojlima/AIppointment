@@ -18,7 +18,7 @@ module "global_infra" {
 }
 
 module "appointment_booking" {
-  source = "./shared/terraform-modules/cloud_function"
+  source = "./modules/cloud_function"
   function_name = "appointment_booking"
   handler       = "main.lambda_handler"
   runtime       = "python3.9"
