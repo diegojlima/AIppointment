@@ -72,7 +72,7 @@ module "appointment_booking_lambda" {
   function_name    = "${local.project_name}-booking"
   handler          = "main.lambda_handler"
   runtime          = "python3.9"
-  source_dir       = "../../functions/appointment-booking/src"
+  source_dir       = "../../../functions/appointment-booking/src"
   
   environment_variables = {
     DYNAMODB_TABLE = aws_dynamodb_table.appointments.name
