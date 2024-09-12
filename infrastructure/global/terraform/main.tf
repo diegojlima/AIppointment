@@ -67,7 +67,7 @@ resource "aws_apigatewayv2_stage" "appointment_api" {
 }
 
 module "appointment_booking_lambda" {
-  source = "../../modules/cloud_function"
+  source = "../modules/cloud_function"
 
   function_name    = "${local.project_name}-booking"
   handler          = "main.lambda_handler"
