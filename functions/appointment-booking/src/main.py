@@ -3,16 +3,16 @@ import json
 import boto3
 from datetime import datetime, timedelta
 import os
-from langchain.prompts import ChatPromptTemplate
-from langchain.chains import LLMChain
-from langchain_aws import ChatBedrock
+# from langchain.prompts import ChatPromptTemplate
+# from langchain.chains import LLMChain
+from langchain_aws import BedrockChat
 
 def get_dynamodb_table():
     dynamodb = boto3.client('dynamodb')
     return dynamodb
 
 def get_llm():
-    return ChatBedrock(
+    return BedrockChat(
         model_id="anthropic.claude-v2",
         model_kwargs={
             "max_tokens_to_sample": 300,
@@ -23,20 +23,21 @@ def get_llm():
     )
 
 def process_message(message):
-    llm = get_llm()
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are an AI assistant for a medical clinic, extracting appointment details from patient messages."),
-        ("human", "Extract appointment details from this message: {message}\n\nProvide the following information in JSON format:\n1. date (YYYY-MM-DD)\n2. time (HH:MM)\n3. purpose\n\nIf any information is missing, use null.")
-    ])
-    chain = LLMChain(llm=llm, prompt=prompt)
+    # llm = get_llm()
+    # prompt = ChatPromptTemplate.from_messages([
+    #     ("system", "You are an AI assistant for a medical clinic, extracting appointment details from patient messages."),
+    #     ("human", "Extract appointment details from this message: {message}\n\nProvide the following information in JSON format:\n1. date (YYYY-MM-DD)\n2. time (HH:MM)\n3. purpose\n\nIf any information is missing, use null.")
+    # ])
+    # chain = LLMChain(llm=llm, prompt=prompt)
     
     try:
-        result = chain.run(message=message)
+        # result = chain.run(message=message)
         # ChatBedrock might return a string that's not JSON-formatted, so we'll try to extract JSON from it
-        json_start = result.find('{')
-        json_end = result.rfind('}') + 1
-        json_str = result[json_start:json_end]
-        return json.loads(json_str)
+        # json_start = result.find('{')
+        # json_end = result.rfind('}') + 1
+        # json_str = result[json_start:json_end]
+        # return json.loads(json_str)
+        return 'test'
     except Exception as e:
         print(f"Error processing message: {str(e)}")
         return None
