@@ -71,7 +71,7 @@ module "appointment_booking_lambda" {
 
   function_name    = "${local.project_name}-booking"
   handler          = "main.lambda_handler"
-  runtime          = "python3.9"
+  runtime          = "python3.12"
   source_dir       = "../../../functions/appointment-booking/src"
   
   environment_variables = {

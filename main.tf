@@ -21,7 +21,7 @@ module "appointment_booking" {
   source = "./modules/cloud_function"
   function_name = "appointment_booking"
   handler       = "main.lambda_handler"
-  runtime       = "python3.9"
+  runtime       = "python3.12"
   source_dir    = "${path.module}/functions/appointment-booking/src"
   environment_variables = {
     DYNAMODB_TABLE = module.global_infra.dynamodb_table_name

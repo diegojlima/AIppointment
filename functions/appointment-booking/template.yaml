@@ -8,7 +8,7 @@ Resources:
     Properties:
       CodeUri: functions/appointment-booking/
       Handler: src.main.lambda_handler
-      Runtime: python3.8
+      Runtime: python3.12
       Events:
         ApiEvent:
           Type: Api
