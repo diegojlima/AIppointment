@@ -46,10 +46,10 @@ If any information is missing, use null."""
         }
 
         # Additional model request fields if needed
-        additional_model_request_fields = {
-            # Include any additional fields required by the model
-            # For example: "top_k": 250
-        }
+        # additional_model_request_fields = {
+        #     # Include any additional fields required by the model
+        #     # For example: "top_k": 250
+        # }
 
         model_id = 'anthropic.claude-3-sonnet-20240229-v1:0'
 
@@ -58,13 +58,13 @@ If any information is missing, use null."""
         logger.info(f"Model ID: '{model_id}'")
         logger.info(f"Messages: {json.dumps(messages, indent=2)}")
         logger.info(f"Inference Config: {json.dumps(inference_config, indent=2)}")
-        logger.info(f"Additional Model Request Fields: {json.dumps(additional_model_request_fields, indent=2)}")
+        # logger.info(f"Additional Model Request Fields: {json.dumps(additional_model_request_fields, indent=2)}")
 
         response = bedrock.converse(
             modelId=model_id,
             messages=messages,
-            inferenceConfig=inference_config,
-            additionalModelRequestParameters=additional_model_request_fields
+            inferenceConfig=inference_config
+            # additionalModelRequestParameters=additional_model_request_fields
         )
 
         # Log the response
