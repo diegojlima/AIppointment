@@ -31,9 +31,7 @@ jobs:
           mkdir -p layer/python
           pip install -r requirements.txt --target layer/python/ --no-cache-dir
           cd layer
-          zip -r9 ../../dependencies_layer.zip .
-          cd ../..
-          rm -rf functions/appointment-booking/layer/
+          zip -r9 ../dependencies_layer.zip .
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2

@@ -19,3 +19,10 @@ crash.log
 crash.*.log
 
 lambda_function.zip
+
+# Ignore the layer dependencies directory
+functions/appointment-booking/layer/
+
+# If you have other layers or build directories
+**/layer/
+**/build/
