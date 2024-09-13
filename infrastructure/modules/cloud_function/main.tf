@@ -1,8 +1,8 @@
 # infrastructure/modules/cloud_function/main.tf
 
 resource "aws_lambda_function" "function" {
-  filename         = data.archive_file.lambda_zip.output_path
-  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+  filename         = "${path.module}/../../../functions/appointment-booking/lambda_function.zip"
+  source_code_hash = filebase64sha256("${path.module}/../../../functions/appointment-booking/lambda_function.zip")
   function_name    = var.function_name
   role             = aws_iam_role.lambda_role.arn
   handler          = var.handler
@@ -15,11 +15,11 @@ resource "aws_lambda_function" "function" {
   }
 }
 
-data "archive_file" "lambda_zip" {
-  type        = "zip"
-  source_dir  = var.source_dir
-  output_path = "${path.module}/lambda_function.zip"
-}
+# data "archive_file" "lambda_zip" {
+#   type        = "zip"
+#   source_dir  = var.source_dir
+#   output_path = "${path.module}/lambda_function.zip"
+# }
 
 resource "aws_iam_role" "lambda_role" {
   name = "${var.function_name}-role"
