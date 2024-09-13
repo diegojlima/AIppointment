@@ -1,5 +1,6 @@
-# ./functions/appointment-booking/src/main.pyimport json
+# ./functions/appointment-booking/src/main.py
 
+import json
 import boto3
 from datetime import datetime, timedelta
 import os
