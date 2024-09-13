@@ -45,12 +45,6 @@ If any information is missing, use null."""
             "temperature": 0.5
         }
 
-        # Additional model request fields if needed
-        # additional_model_request_fields = {
-        #     # Include any additional fields required by the model
-        #     # For example: "top_k": 250
-        # }
-
         model_id = 'anthropic.claude-3-sonnet-20240229-v1:0'
 
         # Log the request details
@@ -58,20 +52,18 @@ If any information is missing, use null."""
         logger.info(f"Model ID: '{model_id}'")
         logger.info(f"Messages: {json.dumps(messages, indent=2)}")
         logger.info(f"Inference Config: {json.dumps(inference_config, indent=2)}")
-        # logger.info(f"Additional Model Request Fields: {json.dumps(additional_model_request_fields, indent=2)}")
 
         response = bedrock.converse(
             modelId=model_id,
             messages=messages,
             inferenceConfig=inference_config
-            # additionalModelRequestParameters=additional_model_request_fields
         )
 
         # Log the response
         logger.info(f"Response: {json.dumps(response, indent=2)}")
 
         # Extract the assistant's reply
-        generated_text = response.get('conversationResponse', {}).get('messages', [])[0].get('content', [])[0].get('text')
+        generated_text = response.get('output', {}).get('message', {}).get('content', [])[0].get('text')
 
         if not generated_text:
             logger.error("No generated text found in the response.")
