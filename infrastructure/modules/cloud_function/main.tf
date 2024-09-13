@@ -65,7 +65,8 @@ resource "aws_iam_role_policy" "bedrock_access" {
     Statement = [{
       Effect = "Allow"
       Action = [
-        "bedrock:InvokeModel"
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
       ]
       Resource = "*"
     }]

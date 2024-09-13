@@ -1,14 +1,15 @@
-# ./functions/appointment-booking/src/main.py
-import json
+# ./functions/appointment-booking/src/main.pyimport json
+
 import boto3
 from datetime import datetime, timedelta
 import os
+import traceback
 
 def get_dynamodb_client():
     return boto3.client('dynamodb')
 
 def get_bedrock_client():
-    return boto3.client('bedrock', region_name='us-west-2')
+    return boto3.client('bedrock-runtime', region_name='us-west-2')
 
 def process_message(message):
     bedrock = get_bedrock_client()
@@ -22,16 +23,32 @@ Provide the following information in JSON format:
 If any information is missing, use null."""
 
     try:
+        body = json.dumps({
+            "prompt": prompt,
+            "max_tokens_to_sample": 300,
+            "temperature": 0.5,
+            "top_p": 0.9,
+            # Include any other parameters required by the model
+        })
+
         response = bedrock.invoke_model(
             modelId='anthropic.claude-v2',
-            contentType='text/plain',
             accept='application/json',
-            body=prompt
+            contentType='application/json',
+            body=body
         )
-        result = response['body'].read().decode('utf-8')
-        # Assuming the model returns a JSON string
-        return json.loads(result)
+
+        response_body = json.loads(response.get('body').read())
+        print(f"Response body: {response_body}")
+
+        # Adjust the key based on actual response structure
+        generated_text = response_body.get('completion') or response_body.get('generated_text') or response_body.get('content')
+
+        # Parse the JSON from the generated text
+        return json.loads(generated_text)
+
     except Exception as e:
+        traceback.print_exc()
         print(f"Error processing message: {str(e)}")
         return None
 
@@ -54,7 +71,7 @@ def lambda_handler(event, context):
     table_name = os.environ['DYNAMODB_TABLE']
 
     try:
-        body = json.loads(event['body'])
+        body = json.loads(event.get('body', '{}'))
         phone_number = body.get('phone_number')
         message = body.get('message')
 
@@ -98,6 +115,7 @@ def lambda_handler(event, context):
             })
         }
     except Exception as e:
+        traceback.print_exc()
         print(f"Error: {str(e)}")
         return {
             'statusCode': 500,
