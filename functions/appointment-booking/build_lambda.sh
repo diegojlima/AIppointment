@@ -1,3 +1,5 @@
+# ./functions/appointment-booking/build_lambda.sh
+
 #!/bin/bash
 
 set -e

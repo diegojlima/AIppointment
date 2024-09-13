@@ -33,7 +33,7 @@ If any information is missing, use null."""
         })
 
         response = bedrock.invoke_model(
-            modelId='anthropic.claude-3-sonnet-20240229-v1',
+            modelId='anthropic.claude-3-sonnet-20240229-v1:0',
             accept='application/json',
             contentType='application/json',
             body=body
