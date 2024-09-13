@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e  # Exit immediately if a command exits with a non-zero status.
+set -e  # Exit on error
 
 # Variables
 SRC_DIR="src"
@@ -13,19 +13,15 @@ rm -rf $BUILD_DIR/ $ZIP_FILE
 # Create build directory
 mkdir -p $BUILD_DIR
 
-# Copy source code
+# Copy source code only
 cp -r $SRC_DIR/* $BUILD_DIR/
 
-# Install dependencies into build directory
-pip install -r requirements.txt --target $BUILD_DIR/
-
-# Navigate to build directory
-cd $BUILD_DIR
+# Remove any __pycache__ directories
+find $BUILD_DIR/ -name "__pycache__" -type d -exec rm -r {} +
 
 # Zip the contents into the deployment package
-zip -r ../$ZIP_FILE .
-
-# Return to the root directory
+cd $BUILD_DIR
+zip -r9 ../$ZIP_FILE .
 cd ..
 
 # Clean up build directory

@@ -13,13 +13,15 @@ resource "aws_lambda_function" "function" {
   environment {
     variables = var.environment_variables
   }
+
+  layers = [aws_lambda_layer_version.dependencies_layer.arn]
 }
 
-# data "archive_file" "lambda_zip" {
-#   type        = "zip"
-#   source_dir  = var.source_dir
-#   output_path = "${path.module}/lambda_function.zip"
-# }
+resource "aws_lambda_layer_version" "dependencies_layer" {
+  filename          = "${path.module}/../../../functions/appointment-booking/dependencies_layer.zip"
+  layer_name        = "${var.function_name}-dependencies"
+  compatible_runtimes = [var.runtime]
+}
 
 resource "aws_iam_role" "lambda_role" {
   name = "${var.function_name}-role"
