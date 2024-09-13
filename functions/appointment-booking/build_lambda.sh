@@ -1,28 +1,19 @@
 #!/bin/bash
 
-set -e  # Exit on error
+set -e
 
 # Variables
 SRC_DIR="src"
-BUILD_DIR="build"
 ZIP_FILE="lambda_function.zip"
 
 # Remove previous builds
-rm -rf $BUILD_DIR/ $ZIP_FILE
+rm -f $ZIP_FILE
 
-# Create build directory
-mkdir -p $BUILD_DIR
-
-# Copy source code only
-cp -r $SRC_DIR/* $BUILD_DIR/
-
-# Remove any __pycache__ directories
-find $BUILD_DIR/ -name "__pycache__" -type d -exec rm -r {} +
+# Navigate to source directory
+cd $SRC_DIR
 
 # Zip the contents into the deployment package
-cd $BUILD_DIR
-zip -r9 ../$ZIP_FILE .
-cd ..
+zip -r ../$ZIP_FILE .
 
-# Clean up build directory
-rm -rf $BUILD_DIR/
+# Return to the root directory
+cd ..

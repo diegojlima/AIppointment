@@ -25,14 +25,6 @@ jobs:
           chmod +x build_lambda.sh
           ./build_lambda.sh
 
-      - name: Build Lambda Layer
-        run: |
-          cd functions/appointment-booking
-          mkdir -p layer/python
-          pip install -r requirements.txt --target layer/python/ --no-cache-dir
-          cd layer
-          zip -r9 ../dependencies_layer.zip .
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
