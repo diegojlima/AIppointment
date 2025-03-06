@@ -1,10 +1,40 @@
+# Python artifacts
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing
 .pytest_cache/
-.terraform/
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+env/
+ENV/
+myenv/
+new_env/
+.venv/
+.env
 *.env
-myenv
-new_env
-.venv
+pyvenv.cfg
 
 # Local .terraform directories
 **/.terraform/*

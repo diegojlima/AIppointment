@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timedelta
 import os
 import traceback
+from input_adapter import normalize_input
 
 # Configure logging
 logger = logging.getLogger()
@@ -101,17 +102,22 @@ def validate_appointment(date, time):
 
 def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
+    
+    # Normalize input from various channels
+    normalized_input = normalize_input(event)
+    phone_number = normalized_input.get('phone_number')
+    message = normalized_input.get('message')
+    session_id = normalized_input.get('session_id')  # For future use in state/memory management
+    channel = normalized_input.get('channel')
+    
+    logger.info(f"Normalized Input: phone_number={phone_number}, channel={channel}, session_id={session_id}")
+
     dynamodb = get_dynamodb_client()
     table_name = os.environ['DYNAMODB_TABLE']
     logger.info(f"DynamoDB table name: {table_name}")
 
     try:
-        body = json.loads(event.get('body', '{}'))
-        logger.info(f"Parsed request body: {body}")
-
-        phone_number = body.get('phone_number')
-        message = body.get('message')
-
+        # Check required fields
         if not phone_number or not message:
             logger.error("Phone number or message is missing.")
             return {
@@ -120,7 +126,6 @@ def lambda_handler(event, context):
             }
 
         processed_message = process_message(message)
-
         if not processed_message:
             logger.error("Unable to process the message.")
             return {
