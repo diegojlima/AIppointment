@@ -15,30 +15,42 @@ from bedrock_agent.calendar_integrator import CalendarIntegrator, lambda_handler
 
 @pytest.fixture
 def mock_calendar_integration():
-    # Mock the calendar_integration module
-    with patch('bedrock_agent.calendar_integrator.CalendarIntegration') as mock_integration:
-        # Set up the mock instance
-        mock_instance = MagicMock()
-        mock_integration.return_value = mock_instance
+    # Mock the import_calendar_integration function
+    with patch('bedrock_agent.calendar_integrator.import_calendar_integration') as mock_import:
+        # Create mock classes for CalendarIntegration and CalendarProvider
+        mock_calendar_integration = MagicMock()
+        mock_calendar_provider = MagicMock()
+        
+        # Configure the mock provider
+        mock_provider_instance = MagicMock()
+        mock_provider_instance.value = 'GOOGLE'
+        mock_calendar_provider.return_value = mock_provider_instance
+        
+        # Configure the mock calendar integration instance
+        mock_calendar_instance = MagicMock()
+        mock_calendar_integration.return_value = mock_calendar_instance
         
         # Set up mock return values
-        mock_instance.check_availability.return_value = [
+        mock_calendar_instance.check_availability.return_value = [
             {"start": "2023-09-18T09:00:00", "end": "2023-09-18T10:00:00"},
             {"start": "2023-09-18T10:00:00", "end": "2023-09-18T11:00:00"}
         ]
         
-        mock_instance.get_next_available_slot.return_value = {
+        mock_calendar_instance.get_next_available_slot.return_value = {
             "start": "2023-09-18T09:00:00", 
             "end": "2023-09-18T10:00:00"
         }
         
-        mock_instance.book_appointment.return_value = {
+        mock_calendar_instance.book_appointment.return_value = {
             "success": True, 
             "appointment_id": "test-calendar-event-1",
             "appointment_details": {"htmlLink": "https://calendar.google.com/event?id=123"}
         }
         
-        yield mock_instance
+        # Configure the import_calendar_integration to return our mocks
+        mock_import.return_value = (mock_calendar_integration, mock_calendar_provider, True)
+        
+        yield mock_calendar_instance
 
 def test_check_availability(mock_calendar_integration):
     # Create an instance of CalendarIntegrator

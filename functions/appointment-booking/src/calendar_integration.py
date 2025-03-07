@@ -3,13 +3,13 @@ import logging
 import os
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional, Union, Type
 import boto3
 import json
+import importlib
 
-# Import calendar service implementations
-from calendar_services.google_calendar import GoogleCalendarService
-from calendar_services.outlook_calendar import OutlookCalendarService
+# Import the calendar service interface
+from calendar_services.calendar_service_interface import CalendarServiceInterface
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class CalendarIntegration:
         
         logger.info("Calendar integration service initialized")
     
-    def get_calendar_service(self, provider: CalendarProvider):
+    def get_calendar_service(self, provider: CalendarProvider) -> CalendarServiceInterface:
         """
         Factory method to get the appropriate calendar service.
         
@@ -58,20 +58,30 @@ class CalendarIntegration:
         if provider in self._services:
             return self._services[provider]
         
-        if provider == CalendarProvider.GOOGLE:
-            # Initialize Google Calendar service
-            service = GoogleCalendarService(credentials_manager=self._get_credentials_manager(provider))
-            self._services[provider] = service
-            return service
-            
-        elif provider == CalendarProvider.OUTLOOK:
-            # Initialize Outlook Calendar service
-            service = OutlookCalendarService(credentials_manager=self._get_credentials_manager(provider))
-            self._services[provider] = service
-            return service
-            
-        else:
+        # Map provider enum to service class names
+        provider_to_class = {
+            CalendarProvider.GOOGLE: "calendar_services.google_calendar.GoogleCalendarService",
+            CalendarProvider.OUTLOOK: "calendar_services.outlook_calendar.OutlookCalendarService"
+        }
+        
+        if provider not in provider_to_class:
             raise ValueError(f"Unsupported calendar provider: {provider}")
+        
+        # Dynamically import the service class
+        service_class_path = provider_to_class[provider]
+        module_path, class_name = service_class_path.rsplit('.', 1)
+        
+        try:
+            module = importlib.import_module(module_path)
+            service_class = getattr(module, class_name)
+            
+            # Initialize the service
+            service = service_class(credentials_manager=self._get_credentials_manager(provider))
+            self._services[provider] = service
+            return service
+        except (ImportError, AttributeError) as e:
+            logger.error(f"Error importing calendar service {service_class_path}: {str(e)}")
+            raise ValueError(f"Calendar service for provider {provider.value} is not available: {str(e)}")
     
     def _get_credentials_manager(self, provider: CalendarProvider):
         """

@@ -6,9 +6,12 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 import boto3
 
+# Import the calendar service interface
+from calendar_services.calendar_service_interface import CalendarServiceInterface
+
 logger = logging.getLogger(__name__)
 
-class GoogleCalendarService:
+class GoogleCalendarService(CalendarServiceInterface):
     """
     Service for interacting with the Google Calendar API.
     
@@ -100,7 +103,7 @@ class GoogleCalendarService:
             logger.error(f"Error getting available slots from Google Calendar: {str(e)}")
             return []
     
-    def create_appointment(self, appointment_data, calendar_id='primary'):
+    def create_appointment(self, appointment_data, calendar_id='primary') -> Dict[str, Any]:
         """
         Create an appointment in the Google Calendar.
         
@@ -142,3 +145,105 @@ class GoogleCalendarService:
         except Exception as e:
             logger.error(f"Error creating appointment in Google Calendar: {str(e)}")
             raise
+    
+    def update_appointment(self, appointment_id: str, appointment_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Update an existing appointment in the Google Calendar.
+        
+        Args:
+            appointment_id: ID of the appointment to update
+            appointment_data: Dictionary with updated appointment details
+            
+        Returns:
+            Dictionary with the updated event details
+        """
+        logger.info(f"Updating appointment {appointment_id} in Google Calendar")
+        
+        try:
+            # In a real implementation, we would:
+            # 1. Get the Google Calendar service
+            # service = self._get_service()
+            
+            # 2. Format the event data
+            # event = {
+            #     'summary': appointment_data.get('summary'),
+            #     'start': appointment_data.get('start'),
+            #     'end': appointment_data.get('end'),
+            #     'attendees': appointment_data.get('attendees', [])
+            # }
+            
+            # 3. Update the event
+            # updated_event = service.events().update(calendarId='primary', eventId=appointment_id, body=event).execute()
+            
+            # For testing, we'll return a mock updated event
+            return {
+                "id": appointment_id,
+                "summary": appointment_data.get("summary"),
+                "start": appointment_data.get("start"),
+                "end": appointment_data.get("end"),
+                "htmlLink": "https://calendar.google.com/calendar/event?id=" + appointment_id
+            }
+            
+        except Exception as e:
+            logger.error(f"Error updating appointment in Google Calendar: {str(e)}")
+            raise
+    
+    def delete_appointment(self, appointment_id: str) -> bool:
+        """
+        Delete an appointment from the Google Calendar.
+        
+        Args:
+            appointment_id: ID of the appointment to delete
+            
+        Returns:
+            True if the appointment was deleted successfully, False otherwise
+        """
+        logger.info(f"Deleting appointment {appointment_id} from Google Calendar")
+        
+        try:
+            # In a real implementation, we would:
+            # 1. Get the Google Calendar service
+            # service = self._get_service()
+            
+            # 2. Delete the event
+            # service.events().delete(calendarId='primary', eventId=appointment_id).execute()
+            
+            # For testing, we'll return success
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error deleting appointment from Google Calendar: {str(e)}")
+            return False
+    
+    def get_appointment(self, appointment_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get details of a specific appointment from the Google Calendar.
+        
+        Args:
+            appointment_id: ID of the appointment to retrieve
+            
+        Returns:
+            Dictionary with the appointment details, or None if not found
+        """
+        logger.info(f"Getting appointment {appointment_id} from Google Calendar")
+        
+        try:
+            # In a real implementation, we would:
+            # 1. Get the Google Calendar service
+            # service = self._get_service()
+            
+            # 2. Get the event
+            # event = service.events().get(calendarId='primary', eventId=appointment_id).execute()
+            
+            # For testing, we'll return a mock event
+            return {
+                "id": appointment_id,
+                "summary": "Mock Appointment",
+                "start": {"dateTime": "2023-09-15T14:00:00"},
+                "end": {"dateTime": "2023-09-15T15:00:00"},
+                "htmlLink": "https://calendar.google.com/calendar/event?id=" + appointment_id
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting appointment from Google Calendar: {str(e)}")
+            return None

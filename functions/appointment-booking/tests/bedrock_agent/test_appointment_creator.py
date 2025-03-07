@@ -79,9 +79,33 @@ def test_create_appointment(mock_dynamodb_table):
 
 @mock_aws
 def test_generate_confirmation(mock_dynamodb_table):
-    # Skip this test for now since it relies on the create_appointment method
-    print("Skipping test_generate_confirmation as it depends on create_appointment")
-    assert True
+    # Create an instance of AppointmentCreator with the mock DynamoDB client
+    creator = AppointmentCreator(dynamodb_client=mock_dynamodb_table)
+    
+    # First, create an appointment to test confirmation generation
+    user_id = "+1234567890"
+    date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+    time = "14:00"
+    purpose = "Test appointment"
+    
+    # Create the appointment
+    appointment_result = creator.create_appointment(user_id, date, time, purpose)
+    assert appointment_result['success'] is True
+    appointment_id = appointment_result['appointmentId']
+    
+    # Now test the generate_confirmation method
+    result = creator.generate_confirmation(appointment_id)
+    
+    # Verify the result
+    assert result['success'] is True
+    assert result['appointmentId'] == appointment_id
+    assert 'confirmationMessage' in result
+    assert 'appointmentDetails' in result
+    
+    # Check that the confirmation message contains the appointment details
+    confirmation_message = result['confirmationMessage']
+    assert purpose in confirmation_message
+    assert time in confirmation_message
 
 @mock_aws
 def test_lambda_handler():
