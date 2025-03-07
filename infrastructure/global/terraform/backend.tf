@@ -2,7 +2,7 @@
 
 terraform {
   backend "s3" {
-    bucket         = "delima-appointment-state-tf"
+    bucket         = "delima-aippointment-terraform-state"
     key            = "terraform.tfstate"
     region         = "us-west-2"  # Use your preferred region
     encrypt        = true
