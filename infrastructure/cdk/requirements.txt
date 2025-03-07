@@ -1,4 +1,4 @@
-aws-cdk-lib==2.103.0
+aws-cdk-lib==2.114.1
 constructs==10.3.0
 jsii==1.92.0
 publication==0.0.3
