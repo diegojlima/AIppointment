@@ -100,6 +100,40 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
+      - name: Create Terraform State Resources
+        run: |
+          # Check if the S3 bucket already exists
+          if ! aws s3api head-bucket --bucket delima-aippointment-terraform-state 2>/dev/null; then
+            echo "Creating S3 bucket for Terraform state..."
+            aws s3api create-bucket \
+              --bucket delima-aippointment-terraform-state \
+              --region ${{ env.AWS_REGION }} \
+              --create-bucket-configuration LocationConstraint=${{ env.AWS_REGION }}
+            
+            aws s3api put-bucket-versioning \
+              --bucket delima-aippointment-terraform-state \
+              --versioning-configuration Status=Enabled
+              
+            aws s3api put-bucket-encryption \
+              --bucket delima-aippointment-terraform-state \
+              --server-side-encryption-configuration '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}'
+          else
+            echo "S3 bucket for Terraform state already exists"
+          fi
+          
+          # Check if the DynamoDB table exists
+          if ! aws dynamodb describe-table --table-name terraform-state-lock 2>/dev/null; then
+            echo "Creating DynamoDB table for Terraform state locking..."
+            aws dynamodb create-table \
+              --table-name terraform-state-lock \
+              --attribute-definitions AttributeName=LockID,AttributeType=S \
+              --key-schema AttributeName=LockID,KeyType=HASH \
+              --provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1 \
+              --region ${{ env.AWS_REGION }}
+          else
+            echo "DynamoDB table for Terraform state locking already exists"
+          fi
+
       - name: Terraform Init
         run: |
           cd infrastructure/global/terraform
