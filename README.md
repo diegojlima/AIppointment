@@ -8,9 +8,16 @@ AIppointment acts as an intelligent assistant that enables users to book appoint
 
 ### Key Features
 
-- **Natural Language Understanding**: Extract appointment details from free-form text
-- **Multi-channel Support**: Architecture designed for WhatsApp Business and other channels
-- **Intelligent Conversation**: State machine to manage conversation flow
+- **Natural Language Understanding**: Extract appointment details from free-form text using Claude 3 on AWS Bedrock
+- **Multi-channel Support**: Architecture designed for WhatsApp Business and other messaging platforms
+- **Intelligent Conversation**: Enhanced state machine with comprehensive conversation flows
+  - Appointment booking and validation
+  - Conflict resolution for scheduling conflicts
+  - Disambiguation of unclear inputs
+  - Rescheduling and cancellation workflows
+  - Appointment lookup and reminders
+- **LangChain Integration**: Structured AI interactions with memory and tools
+- **WhatsApp Business Integration**: Direct connection to WhatsApp Business API
 - **Intent Classification**: Route messages based on detected user intent
 - **Extensible Connector System**: Framework for adding new communication channels
 
@@ -128,11 +135,12 @@ The project includes a GitHub Actions workflow that automatically deploys change
 - [x] Core appointment extraction and booking
 - [x] AWS infrastructure setup
 - [x] Basic conversation state management
-- [ ] Complete WhatsApp Business integration
+- [x] LangChain integration for better AI interactions
+- [x] WhatsApp Business API integration
+- [x] Enhanced state machine with more states and transitions
 - [ ] Calendar system integration (Google Calendar, Outlook)
 - [ ] Appointment reminders
 - [ ] Multi-language support
-- [ ] Advanced conversation capabilities
 - [ ] User management system
 
 ## Contributing
