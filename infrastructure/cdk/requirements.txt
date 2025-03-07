@@ -1,8 +1,8 @@
 aws-cdk-lib==2.103.0
-constructs>=10.0.0
-jsii>=1.84.0
-publication>=0.0.3
-boto3>=1.28.0
-pytest>=7.0.0
-pytest-cov>=4.1.0
-typeguard>=2.13.3
+constructs==10.3.0
+jsii==1.92.0
+publication==0.0.3
+boto3==1.29.3
+pytest==7.4.3
+pytest-cov==4.1.0
+typeguard==2.13.3

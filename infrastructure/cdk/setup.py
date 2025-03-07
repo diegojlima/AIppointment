@@ -12,10 +12,10 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "aws-cdk-lib==2.103.0",
-        "constructs>=10.0.0",
-        "jsii>=1.84.0",
-        "boto3>=1.28.0",
-        "pytest>=7.0.0",
+        "constructs==10.3.0",
+        "jsii==1.92.0",
+        "boto3==1.29.3",
+        "pytest==7.4.3",
     ],
     python_requires=">=3.8",
 )
