@@ -4,6 +4,9 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Union
 from src.agent_tools import fetch_missing_information  # Import the tool function
 
+# Import the calendar integration
+from src.calendar_integration import CalendarIntegration, CalendarProvider
+
 logger = logging.getLogger(__name__)
 
 class AssistantStateMachine:
@@ -23,6 +26,7 @@ class AssistantStateMachine:
         "CONFLICT_RESOLUTION": "Resolving scheduling conflicts",
         "CONFIRM": "Confirming appointment details",
         "EXECUTE": "Executing appointment booking",
+        "CALENDAR_SYNC": "Syncing appointment with calendar",
         
         # Cancellation flow
         "CANCELLATION": "Processing cancellation request",
@@ -52,6 +56,12 @@ class AssistantStateMachine:
         self.memory = memory_store if memory_store is not None else {}
         self.state = "INIT"
         self.context = {}
+        
+        # Initialize calendar integration
+        self.calendar = CalendarIntegration()
+        
+        # Default calendar provider (can be changed based on user preference)
+        self.default_calendar_provider = CalendarProvider.GOOGLE
 
     def update_memory(self, key: str, value: Any) -> None:
         """
@@ -142,7 +152,7 @@ class AssistantStateMachine:
         
     def _has_scheduling_conflict(self, date: str, time: str) -> bool:
         """
-        Check if there's a scheduling conflict for the given date and time.
+        Check if there's a scheduling conflict for the given date and time using the calendar API.
         
         Args:
             date: The date to check
@@ -151,12 +161,27 @@ class AssistantStateMachine:
         Returns:
             True if there's a conflict, False otherwise
         """
-        # Use the simulated conflicts stored in memory for testing
+        # First, check simulated conflicts in memory for testing
         conflicts = self.get_memory("conflicts") or []
-        
         for conflict in conflicts:
             if conflict.get("date") == date and conflict.get("time") == time:
                 return True
+        
+        # If no simulated conflicts, check real calendar conflicts
+        # Only do this in non-test mode to avoid real API calls during tests
+        if "test" not in self.session_id.lower():
+            try:
+                provider = self.get_memory("calendar_provider") or self.default_calendar_provider
+                return self.calendar.has_conflicts(
+                    provider=provider,
+                    date=date,
+                    time=time,
+                    duration_minutes=60  # Default to 1 hour appointments
+                )
+            except Exception as e:
+                logger.error(f"Error checking calendar conflicts: {str(e)}")
+                # Fall back to no conflicts in case of error
+                return False
                 
         return False
         
@@ -208,6 +233,76 @@ class AssistantStateMachine:
             return "provide_new_time"
             
         return "unknown"
+    
+    def _get_available_slots(self, date: str) -> List[Dict[str, str]]:
+        """
+        Get available time slots for a specific date using the calendar API.
+        
+        Args:
+            date: The date to check (YYYY-MM-DD)
+            
+        Returns:
+            A list of available time slots with start and end times
+        """
+        try:
+            provider = self.get_memory("calendar_provider") or self.default_calendar_provider
+            return self.calendar.check_availability(
+                provider=provider,
+                date=date,
+                start_time="09:00",  # Start of business hours
+                end_time="17:00"     # End of business hours
+            )
+        except Exception as e:
+            logger.error(f"Error getting available slots: {str(e)}")
+            # Return a default set of slots in case of error
+            return [
+                {"start": f"{date}T09:00:00", "end": f"{date}T10:00:00"},
+                {"start": f"{date}T11:00:00", "end": f"{date}T12:00:00"},
+                {"start": f"{date}T14:00:00", "end": f"{date}T15:00:00"},
+                {"start": f"{date}T16:00:00", "end": f"{date}T17:00:00"}
+            ]
+    
+    def _book_calendar_appointment(self, details: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Book an appointment in the calendar system.
+        
+        Args:
+            details: Dictionary with appointment details
+            
+        Returns:
+            Dictionary with booking result
+        """
+        try:
+            provider = self.get_memory("calendar_provider") or self.default_calendar_provider
+            
+            # Extract appointment details
+            appointment_details = {
+                "date": details.get("date"),
+                "time": details.get("time"),
+                "duration_minutes": details.get("duration_minutes", 60),
+                "purpose": details.get("purpose", "Appointment"),
+                "attendee_email": details.get("attendee_email")
+            }
+            
+            # Book the appointment in the calendar
+            result = self.calendar.book_appointment(
+                provider=provider,
+                appointment_details=appointment_details
+            )
+            
+            if result["success"]:
+                # Store the appointment ID in memory
+                self.update_memory("calendar_appointment_id", result["appointment_id"])
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error booking calendar appointment: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": type(e).__name__
+            }
 
     def process_input(self, message: str, extracted_details: Dict[str, Any]) -> str:
         """
@@ -303,7 +398,29 @@ class AssistantStateMachine:
                     appt = upcoming_appointments[0]  # Just use first one for simplicity
                     response = f"Yes, you have an appointment tomorrow at {appt.get('time')} for {appt.get('purpose')}."
                 else:
-                    response = "You don't have any upcoming appointments scheduled."
+                    # If we have calendar integration enabled, check the calendar
+                    if "test" not in self.session_id.lower():
+                        try:
+                            provider = self.get_memory("calendar_provider") or self.default_calendar_provider
+                            tomorrow_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+                            
+                            # Get next available slot
+                            next_slot = self.calendar.get_next_available_slot(
+                                provider=provider,
+                                date=tomorrow_date
+                            )
+                            
+                            if next_slot:
+                                slot_time = datetime.fromisoformat(next_slot["start"]).strftime("%H:%M")
+                                response = f"You don't have any appointments scheduled, but I see you have availability tomorrow at {slot_time}. Would you like to book an appointment?"
+                            else:
+                                response = "You don't have any upcoming appointments scheduled."
+                                
+                        except Exception as e:
+                            logger.error(f"Error checking calendar: {str(e)}")
+                            response = "You don't have any upcoming appointments scheduled."
+                    else:
+                        response = "You don't have any upcoming appointments scheduled."
             
             # Normal booking flow - check for missing required details
             elif not extracted_details.get("date") or not extracted_details.get("time"):
@@ -351,9 +468,21 @@ class AssistantStateMachine:
             # Check for scheduling conflicts
             if self._has_scheduling_conflict(date, time):
                 self.transition("CONFLICT_RESOLUTION")
-                conflicts = self.get_memory("conflicts")
-                conflict_times = ", ".join([f"{c.get('time')}" for c in conflicts])
-                response = f"There's a scheduling conflict for {date} at {time}. These times are already booked: {conflict_times}. Please choose another time."
+                
+                # Get available slots for this date to suggest alternatives
+                available_slots = self._get_available_slots(date)
+                
+                if available_slots:
+                    # Format available times for display
+                    slot_times = []
+                    for slot in available_slots:
+                        start_time = datetime.fromisoformat(slot["start"]).strftime("%H:%M")
+                        slot_times.append(start_time)
+                    
+                    available_times = ", ".join(slot_times)
+                    response = f"There's a scheduling conflict for {date} at {time}. Available times on this date are: {available_times}. Please choose another time."
+                else:
+                    response = f"There's a scheduling conflict for {date} at {time}. Unfortunately, there are no available slots on this date. Would you like to try another date?"
             else:
                 self.transition("CONFIRM")
                 response = "Details validated. Awaiting confirmation."
@@ -446,10 +575,63 @@ class AssistantStateMachine:
         # Execute State - Finalizing the booking process
         elif self.state == "EXECUTE":
             self.update_memory("action_status", "completed")
-            date = self.context["extracted"].get("date")
-            time = self.context["extracted"].get("time")
-            purpose = self.context["extracted"].get("purpose", "appointment")
-            response = f"Your {purpose} has been successfully booked for {date} at {time}."
+            
+            # If not in test mode, add the appointment to the calendar
+            if "test" not in self.session_id.lower():
+                self.transition("CALENDAR_SYNC")
+                appointment_details = {
+                    "date": self.context["extracted"].get("date"),
+                    "time": self.context["extracted"].get("time"),
+                    "purpose": self.context["extracted"].get("purpose", "Appointment"),
+                    "duration_minutes": 60,  # Default duration
+                    "attendee_email": self.context["extracted"].get("attendee_email")
+                }
+                
+                # Store the appointment details in memory
+                self.update_memory("appointment_details", appointment_details)
+                
+                response = f"Appointment details confirmed. Syncing with your calendar..."
+            else:
+                date = self.context["extracted"].get("date")
+                time = self.context["extracted"].get("time")
+                purpose = self.context["extracted"].get("purpose", "appointment")
+                response = f"Your {purpose} has been successfully booked for {date} at {time}."
+        
+        # Calendar Sync State - Syncing with external calendar
+        elif self.state == "CALENDAR_SYNC":
+            appointment_details = self.get_memory("appointment_details")
+            
+            if appointment_details:
+                # Book the appointment in the calendar
+                result = self._book_calendar_appointment(appointment_details)
+                
+                if result["success"]:
+                    date = appointment_details.get("date")
+                    time = appointment_details.get("time")
+                    purpose = appointment_details.get("purpose", "appointment")
+                    
+                    # Add calendar-specific details like link to the appointment
+                    if result.get("appointment_details", {}).get("htmlLink"):
+                        calendar_link = result["appointment_details"]["htmlLink"]
+                        self.update_memory("calendar_link", calendar_link)
+                        response = f"Your {purpose} has been successfully booked for {date} at {time}. You can view it in your calendar: {calendar_link}"
+                    else:
+                        response = f"Your {purpose} has been successfully booked for {date} at {time} and added to your calendar."
+                else:
+                    # If calendar sync fails, still confirm the booking but note the sync failure
+                    error = result.get("error", "unknown error")
+                    logger.error(f"Calendar sync failed: {error}")
+                    
+                    date = appointment_details.get("date")
+                    time = appointment_details.get("time")
+                    purpose = appointment_details.get("purpose", "appointment")
+                    
+                    response = f"Your {purpose} has been booked for {date} at {time}, but there was an issue syncing with your calendar."
+            else:
+                # If no appointment details, this is an error case
+                response = "There was an error with your appointment. Please try booking again."
+            
+            self.transition("END")
         
         # End State - Conversation ended
         elif self.state == "END":

@@ -19,7 +19,10 @@ AIppointment acts as an intelligent assistant that enables users to book appoint
 - **LangChain Integration**: Structured AI interactions with memory and tools
 - **WhatsApp Business Integration**: Direct connection to WhatsApp Business API
 - **Intent Classification**: Route messages based on detected user intent
-- **Extensible Connector System**: Framework for adding new communication channels
+- **Calendar Integration**: Connects with Google Calendar and Microsoft Outlook
+  - Real-time availability checking
+  - Appointment booking in external calendars
+  - Conflict detection and resolution
 
 ## System Architecture
 
@@ -39,6 +42,7 @@ The system follows a serverless architecture pattern built on AWS services:
 3. **Appointment Processor**: Extracts and validates appointment details
 4. **State Machine**: Manages conversation flow across multiple interactions
 5. **Connector Registry**: Interfaces with external communication channels
+6. **Calendar Integration**: Connects with external calendar systems
 
 ## Getting Started
 
@@ -126,7 +130,13 @@ The project includes a GitHub Actions workflow that automatically deploys change
     "time": "14:00",
     "purpose": "checkup"
   },
-  "is_valid": true
+  "is_valid": true,
+  "calendar": {
+    "synced": true,
+    "provider": "google",
+    "event_id": "abc123xyz",
+    "event_link": "https://calendar.google.com/calendar/event?id=abc123xyz"
+  }
 }
 ```
 
@@ -138,7 +148,7 @@ The project includes a GitHub Actions workflow that automatically deploys change
 - [x] LangChain integration for better AI interactions
 - [x] WhatsApp Business API integration
 - [x] Enhanced state machine with more states and transitions
-- [ ] Calendar system integration (Google Calendar, Outlook)
+- [x] Calendar system integration (Google Calendar, Outlook)
 - [ ] Appointment reminders
 - [ ] Multi-language support
 - [ ] User management system
