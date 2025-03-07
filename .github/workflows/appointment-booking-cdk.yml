@@ -125,9 +125,10 @@ jobs:
           # role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           # role-session-name: GitHubActionsDeployment
 
-      - name: Install CDK CLI and Dependencies
+      - name: Install CDK CLI, AWS CLI, and Dependencies
         run: |
           npm install -g aws-cdk@2.103.0
+          pip install awscli
           cd infrastructure/cdk
           pip install -r requirements.txt
           pip install -e .
@@ -148,7 +149,7 @@ jobs:
       - name: Bootstrap CDK (if needed)
         run: |
           cd infrastructure/cdk
-          cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }}
+          cdk bootstrap aws://${{ env.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }}
 
       - name: Deploy CDK Stack
         run: |
