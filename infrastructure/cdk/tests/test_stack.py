@@ -8,7 +8,7 @@ from stacks.main_stack import AIppointmentStack
 def test_dynamodb_tables_created():
     app = cdk.App()
     stack = AIppointmentStack(app, "TestStack", 
-                             environment="test", 
+                             app_environment="test", 
                              project_name="test-project", 
                              whatsapp_phone_number_id="test-id", 
                              whatsapp_webhook_verify_token="test-token")
@@ -32,7 +32,7 @@ def test_dynamodb_tables_created():
 def test_lambda_functions_created():
     app = cdk.App()
     stack = AIppointmentStack(app, "TestStack", 
-                             environment="test", 
+                             app_environment="test", 
                              project_name="test-project", 
                              whatsapp_phone_number_id="test-id", 
                              whatsapp_webhook_verify_token="test-token")
@@ -44,7 +44,7 @@ def test_lambda_functions_created():
 def test_api_gateway_created():
     app = cdk.App()
     stack = AIppointmentStack(app, "TestStack", 
-                             environment="test", 
+                             app_environment="test", 
                              project_name="test-project", 
                              whatsapp_phone_number_id="test-id", 
                              whatsapp_webhook_verify_token="test-token")
@@ -57,7 +57,7 @@ def test_api_gateway_created():
 def test_s3_bucket_created():
     app = cdk.App()
     stack = AIppointmentStack(app, "TestStack", 
-                             environment="test", 
+                             app_environment="test", 
                              project_name="test-project", 
                              whatsapp_phone_number_id="test-id", 
                              whatsapp_webhook_verify_token="test-token")
@@ -69,7 +69,7 @@ def test_s3_bucket_created():
 def test_custom_resource_for_bedrock_agent():
     app = cdk.App()
     stack = AIppointmentStack(app, "TestStack", 
-                             environment="test", 
+                             app_environment="test", 
                              project_name="test-project", 
                              whatsapp_phone_number_id="test-id", 
                              whatsapp_webhook_verify_token="test-token")

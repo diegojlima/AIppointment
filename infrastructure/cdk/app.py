@@ -20,7 +20,7 @@ stack = AIppointmentStack(
     "AIppointmentStack",
     env=env,
     description=f"AIppointment application infrastructure for {environment} environment",
-    environment=environment,
+    app_environment=environment,
     project_name=project_name,
     # Pass other context values to the stack
     whatsapp_phone_number_id=app.node.try_get_context('whatsappPhoneNumberId'),

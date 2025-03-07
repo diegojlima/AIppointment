@@ -22,11 +22,11 @@ class AIppointmentStack(Stack):
     Main CDK stack for the AIppointment application, migrated from Terraform.
     """
     
-    def __init__(self, scope: Construct, construct_id: str, environment: str, project_name: str, whatsapp_phone_number_id: str = None, whatsapp_webhook_verify_token: str = None, foundation_model_id: str = None, **kwargs) -> None:
+    def __init__(self, scope: Construct, construct_id: str, app_environment: str, project_name: str, whatsapp_phone_number_id: str = None, whatsapp_webhook_verify_token: str = None, foundation_model_id: str = None, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         
         # Store parameters
-        self.environment = environment
+        self.app_environment = app_environment
         self.project_name = project_name
         self.whatsapp_phone_number_id = whatsapp_phone_number_id
         self.whatsapp_webhook_verify_token = whatsapp_webhook_verify_token
@@ -111,7 +111,7 @@ class AIppointmentStack(Stack):
         stage = apigatewayv2.HttpStage(
             self, "ApiStage",
             http_api=http_api,
-            stage_name=environment,
+            stage_name=app_environment,
             auto_deploy=True,
         )
         
@@ -166,7 +166,7 @@ class AIppointmentStack(Stack):
                 "WHATSAPP_PHONE_NUMBER_ID": self.whatsapp_phone_number_id or "",
                 "WHATSAPP_WEBHOOK_VERIFY_TOKEN": self.whatsapp_webhook_verify_token or "",
                 "BEDROCK_MODEL_ID": self.foundation_model_id,
-                "ENVIRONMENT": self.environment,
+                "ENVIRONMENT": self.app_environment,
             },
             timeout=Duration.seconds(30),
             memory_size=128,
@@ -201,12 +201,12 @@ class AIppointmentStack(Stack):
             self, "BedrockAgent",
             schema_bucket=s3.Bucket(
                 self, "SchemasBucket",
-                bucket_name=f"{project_name}-schemas-{environment}",
+                bucket_name=f"{project_name}-schemas-{app_environment}",
                 removal_policy=RemovalPolicy.RETAIN
             ),
             appointment_creator_lambda=lambda_.Function(
                 self, "AppointmentCreatorLambda",
-                function_name=f"{project_name}-appointment-creator-{environment}",
+                function_name=f"{project_name}-appointment-creator-{app_environment}",
                 runtime=lambda_.Runtime.PYTHON_3_12,
                 handler="bedrock_agent.appointment_creator.lambda_handler",
                 code=lambda_.Code.from_asset(lambda_code_path),
@@ -216,7 +216,7 @@ class AIppointmentStack(Stack):
             ),
             appointment_manager_lambda=lambda_.Function(
                 self, "AppointmentManagerLambda",
-                function_name=f"{project_name}-appointment-manager-{environment}",
+                function_name=f"{project_name}-appointment-manager-{app_environment}",
                 runtime=lambda_.Runtime.PYTHON_3_12,
                 handler="bedrock_agent.appointment_manager.lambda_handler",
                 code=lambda_.Code.from_asset(lambda_code_path),
@@ -226,7 +226,7 @@ class AIppointmentStack(Stack):
             ),
             calendar_integrator_lambda=lambda_.Function(
                 self, "CalendarIntegratorLambda",
-                function_name=f"{project_name}-calendar-integrator-{environment}",
+                function_name=f"{project_name}-calendar-integrator-{app_environment}",
                 runtime=lambda_.Runtime.PYTHON_3_12,
                 handler="bedrock_agent.calendar_integrator.lambda_handler",
                 code=lambda_.Code.from_asset(lambda_code_path),
@@ -243,19 +243,19 @@ class AIppointmentStack(Stack):
         CfnOutput(self, "BedrockAgentId",
             value=bedrock_agent_construct.agent_id,
             description="ID of the Bedrock Agent",
-            export_name=f"{project_name}-agent-id-{environment}"
+            export_name=f"{project_name}-agent-id-{app_environment}"
         )
         
         CfnOutput(self, "BedrockAgentAliasId",
             value=bedrock_agent_construct.agent_alias_id,
             description="ID of the Bedrock Agent Alias",
-            export_name=f"{project_name}-agent-alias-id-{environment}"
+            export_name=f"{project_name}-agent-alias-id-{app_environment}"
         )
         
         CfnOutput(self, "ApiGatewayUrl",
             value=http_api.api_endpoint,
             description="URL of the API Gateway",
-            export_name=f"{project_name}-api-url-{environment}"
+            export_name=f"{project_name}-api-url-{app_environment}"
         )
     
     def create_bedrock_agent_resources(
