@@ -1,0 +1,113 @@
+name: AIppointment with Bedrock Agent CI/CD
+
+on:
+  push:
+    branches: [v3, main]
+  pull_request:
+    branches: [v3, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-mock boto3 moto
+          cd functions/appointment-booking
+          pip install -r requirements.txt
+
+      - name: Run Tests
+        run: |
+          cd functions/appointment-booking
+          python -m pytest tests/
+
+  build_and_deploy:
+    if: github.ref == 'refs/heads/v3' || github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies and Package Lambda Functions
+        run: |
+          python -m pip install --upgrade pip
+          cd functions/appointment-booking
+          pip install -r requirements.txt
+          
+          # Make the script executable
+          chmod +x build_action_group_lambdas.sh
+          
+          # Build action group lambda packages
+          ./build_action_group_lambdas.sh
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: |
+          cd infrastructure/global/terraform
+          terraform init
+
+      - name: Terraform Validate
+        run: |
+          cd infrastructure/global/terraform
+          terraform validate
+          
+      - name: Terraform Plan
+        run: |
+          cd infrastructure/global/terraform
+          terraform plan -out=tfplan
+          
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/v3'
+        run: |
+          cd infrastructure/global/terraform
+          terraform apply -auto-approve tfplan
+          
+      - name: Validate Bedrock Agent
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/v3'
+        run: |
+          # Retrieve Bedrock Agent ID from Terraform outputs
+          cd infrastructure/global/terraform
+          BEDROCK_AGENT_ID=$(terraform output -raw bedrock_agent_id)
+          BEDROCK_AGENT_ALIAS_ID=$(terraform output -raw bedrock_agent_alias_id)
+          
+          # Test the Bedrock Agent with a simple prompt
+          RESPONSE=$(aws bedrock-agent-runtime invoke-agent \
+            --agent-id $BEDROCK_AGENT_ID \
+            --agent-alias-id $BEDROCK_AGENT_ALIAS_ID \
+            --session-id "github-actions-test-$(date +%s)" \
+            --input-text "I need an appointment tomorrow at 2pm" \
+            --region us-west-2)
+            
+          # Check if the response contains a completion
+          echo $RESPONSE | jq .completion
+          
+          if [[ -z $(echo $RESPONSE | jq -r .completion) ]]; then
+            echo "❌ Bedrock Agent validation failed"
+            exit 1
+          else
+            echo "✅ Bedrock Agent validation successful"
+          fi
