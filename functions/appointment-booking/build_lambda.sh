@@ -1,21 +1,41 @@
-# ./functions/appointment-booking/build_lambda.sh
-
 #!/bin/bash
 
-set -e
+# AIppointment Lambda Build Script
+# This script packages the Lambda function for deployment
 
-# Variables
-SRC_DIR="src"
-ZIP_FILE="lambda_function.zip"
+echo "Building AIppointment Lambda package..."
 
-# Remove previous builds
-rm -f $ZIP_FILE
+# Create build directory
+mkdir -p build
 
-# Navigate to source directory
-cd $SRC_DIR
+# Install dependencies
+echo "Installing dependencies..."
+pip install -r requirements.txt -t build/ --no-deps
 
-# Zip the contents into the deployment package
-zip -r ../$ZIP_FILE .
+# Copy source files
+echo "Copying source files..."
+cp -r src/* build/
 
-# Return to the root directory
+# Remove any existing package
+rm -f lambda_function.zip
+
+# Create zip package
+echo "Creating Lambda package..."
+cd build
+zip -r ../lambda_function.zip .
 cd ..
+
+# Clean up
+echo "Cleaning up..."
+rm -rf build
+
+echo "Lambda package created: lambda_function.zip"
+echo ""
+echo "To deploy, run:"
+echo "aws lambda create-function \\"
+echo "  --function-name AIppointment \\"
+echo "  --runtime python3.12 \\"
+echo "  --handler main.lambda_handler \\"
+echo "  --role YOUR_LAMBDA_ROLE_ARN \\"
+echo "  --zip-file fileb://lambda_function.zip \\"
+echo "  --environment \"Variables={...}\""

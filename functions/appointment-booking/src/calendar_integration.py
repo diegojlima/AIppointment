@@ -8,8 +8,8 @@ import boto3
 import json
 
 # Import calendar service implementations
-from src.calendar_services.google_calendar import GoogleCalendarService
-from src.calendar_services.outlook_calendar import OutlookCalendarService
+from calendar_services.google_calendar import GoogleCalendarService
+from calendar_services.outlook_calendar import OutlookCalendarService
 
 logger = logging.getLogger(__name__)
 

@@ -1,210 +1,224 @@
-# AIppointment - LangChain Integration
+# AIppointment - AWS Bedrock Agents Architecture
 
-## Implementation Plan
+## Introduction
 
-This document outlines the implementation plan for Phase 1 of the AIppointment project roadmap.
+AIppointment is an AI-powered appointment booking system that leverages AWS Bedrock Agents for natural language understanding and WhatsApp integration for communication. This README documents the simplified architecture implementation based on AWS Bedrock Agents.
 
-### Phase 1: Foundation Improvements
+## Architecture Overview
 
-1. ✅ Implement LangChain for better AI interactions
-   - Created basic and enhanced LangChain agents for appointment extraction
-   - Added conversation memory for context-aware responses
-   - Used ChatBedrock integration for Claude 3 models
+The AIppointment system follows a serverless architecture on AWS with the following components:
 
-2. ✅ Complete the WhatsApp Business API integration
+- **AWS Lambda**: Core processing logic in Python 3.12
+- **AWS Bedrock Agents**: Handles conversation flow and decision making
+- **AWS End User Messaging**: WhatsApp integration
+- **Amazon DynamoDB**: Appointment data storage
+- **Google/Outlook Calendar API**: Calendar integration
 
-3. ⬜ Enhance the state machine with more states and transitions
+The system is organized into the following core components:
 
-4. ⬜ Calendar system integration for availability checking
+1. **Main Lambda Handler**: Entry point for all requests
+2. **Bedrock Agent Action Groups**:
+   - AppointmentCreator: Create new appointments
+   - AppointmentManager: Manage existing appointments
+   - CalendarIntegrator: Integrate with external calendar systems
+3. **WhatsApp Integration**: Handle messaging via AWS End User Messaging
+4. **Calendar Integration**: Connect with Google Calendar and Microsoft Outlook
 
 ## Implementation Details
 
-### LangChain Integration
+### AWS Bedrock Agents Integration
 
-We've implemented two versions of the LangChain agent:
+The system uses AWS Bedrock Agents to handle conversational AI capabilities:
 
-1. **Basic Agent (`langchain_agent_basic.py`)**
-   - Simple implementation using direct Bedrock API calls
-   - Extracts appointment details from user messages
-   - Fully tested with mocked responses
+1. **Agent Schema**: OpenAPI schema defining the agent capabilities
+2. **Action Groups**: Lambda functions that implement specific appointment-related actions
+3. **Conversation Management**: Persistent session management across messages
 
-2. **Enhanced Agent (`langchain_agent_enhanced.py`)**
-   - Uses LangChain's ChatBedrock for improved interactions
-   - Maintains conversation memory for context-aware responses
-   - Gracefully falls back to basic implementation if LangChain is not available
-   - Fully tested with mocked LangChain components
+### AWS End User Messaging for WhatsApp
 
-### Key Components
+The system integrates with WhatsApp using AWS End User Messaging:
 
-- **ChatBedrock Integration**: Uses LangChain's ChatBedrock to interact with Claude 3 models
-- **Conversation Memory**: Maintains context across multiple interactions
-- **Extraction Chain**: Specialized chain for extracting appointment details
-- **Error Handling**: Graceful fallbacks for missing dependencies
+1. **Webhook Handling**: Process incoming WhatsApp messages
+2. **Message Sending**: Send text and template messages to users
+3. **Rich Messaging**: Support for formatted messages and templates
 
-### Test Strategy
+### Calendar Integration
 
-We've implemented a comprehensive test suite:
+The system provides flexible calendar integration:
 
-- Unit tests for both basic and enhanced implementations
-- Mock components to avoid actual API calls
-- Tests for memory and conversation history
-- Tests for error handling and fallback mechanisms
+1. **Google Calendar**: Check availability and book appointments in Google Calendar
+2. **Microsoft Outlook**: Alternative calendar system integration
+3. **Availability Checking**: Find available time slots for appointments
 
-### Files to Use
+## Deployment Guide
 
-#### Implementation Files
-- `langchain_agent_basic.py` - Basic agent using direct Bedrock API
-- `langchain_agent_enhanced.py` - Enhanced agent using LangChain
+### Prerequisites
 
-#### Test Files
-- `test_langchain_agent_basic.py` - Tests for the basic agent
-- `test_langchain_agent_enhanced.py` - Tests for the enhanced agent
+1. AWS Account with appropriate permissions
+2. WhatsApp Business Account with AWS End User Messaging set up
+3. Google Cloud or Microsoft Azure account for calendar APIs
 
-> Note: There are other files in the repository that were created during exploration and development. For a clean implementation, focus on the four files listed above.
+### Step 1: Set up AWS Resources
 
-### WhatsApp Business API Integration
-
-We've implemented a comprehensive WhatsApp Business API integration with the following components:
-
-1. **WhatsApp Connector (`whatsapp_connector.py`)**
-   - Integration with WhatsApp Cloud API for sending and receiving messages
-   - Support for text messages and template messages
-   - Webhook handling for incoming messages
-   - Verification endpoint for webhook setup
-
-2. **Multi-Channel Handler (`multi_channel.py`)**
-   - Channel-agnostic messaging framework
-   - Message normalization across different channels
-   - Support for both incoming and outgoing messages
-   - Extensible design for future channel integrations
-
-3. **Connector Registry Update**
-   - Added WhatsApp connector to the registry system
-   - Standardized interface for accessing messaging channels
-
-### Key Capabilities
-
-- **Sending Text Messages**: Send plain text messages to WhatsApp users
-- **Template Messages**: Send structured messages using approved WhatsApp templates
-- **Incoming Message Processing**: Parse and normalize incoming WhatsApp messages
-- **Webhook Verification**: Support for setting up and verifying WhatsApp webhooks
-- **Configuration Management**: Flexible configuration for multiple WhatsApp numbers
-
-### Test Strategy
-
-We've implemented comprehensive tests for both the WhatsApp connector and multi-channel handler:
-
-- Unit tests for the WhatsApp connector implementation
-- Tests for webhook message processing
-- Tests for sending text and template messages
-- Tests for multi-channel message normalization
-
-### Files to Use
-
-#### Implementation Files
-- `whatsapp_connector.py` - WhatsApp Business API connector
-- `multi_channel.py` - Multi-channel messaging handler
-- `config/whatsapp_config.json` - Configuration template for WhatsApp
-
-#### Test Files
-- `test_whatsapp_connector.py` - Tests for the WhatsApp connector
-- `test_multi_channel.py` - Tests for the multi-channel handler
-
-### Next Steps
-
-1. Install required dependencies:
+1. **Create DynamoDB Tables**:
    ```bash
-   pip install langchain==0.1.11 langchain-aws==0.1.1 boto3>=1.34.72 requests>=2.31.0
-   ```
-
-2. Set up a WhatsApp Business Account and obtain required credentials
-
-3. Update the WhatsApp configuration file with your credentials:
-   ```json
-   // functions/appointment-booking/src/config/whatsapp_config.json
-   [
-     {
-       "connectorType": "WHATSAPP",
-       "connectorMetadata": {
-         "phone_number_id": "YOUR_PHONE_NUMBER_ID",
-         "business_account_id": "YOUR_BUSINESS_ACCOUNT_ID"
-       },
-       "connectorConnectionParams": {
-         "access_token": "YOUR_ACCESS_TOKEN",
-         "webhook_verify_token": "YOUR_VERIFY_TOKEN",
-         "api_version": "v17.0"
-       }
-     }
-   ]
-   ```
-
-4. Integrate the multi-channel handler with the LangChain agent:
-   ```python
-   # Example integration
-   from langchain_agent_enhanced import LangChainAgentEnhanced
-   from multi_channel import MultiChannelHandler
+   aws dynamodb create-table \
+     --table-name Appointments \
+     --attribute-definitions AttributeName=id,AttributeType=S \
+     --key-schema AttributeName=id,KeyType=HASH \
+     --billing-mode PAY_PER_REQUEST
    
-   # Initialize components
-   agent = LangChainAgentEnhanced(session_id="user-123")
-   multi_channel = MultiChannelHandler(config_file_path="config/whatsapp_config.json")
+   aws dynamodb create-table \
+     --table-name ConversationHistory \
+     --attribute-definitions AttributeName=conversationId,AttributeType=S \
+     --key-schema AttributeName=conversationId,KeyType=HASH \
+     --billing-mode PAY_PER_REQUEST
    
-   # Process incoming message
-   def process_whatsapp_message(webhook_payload):
-       # Process the webhook
-       result = multi_channel.process_incoming_message("WHATSAPP", webhook_payload)
-       
-       if not result.get("success", False):
-           return {"error": result.get("error")}
-       
-       # Extract and process the first message
-       if result.get("messages") and len(result["messages"]) > 0:
-           message = result["messages"][0]
-           
-           # Extract appointment details using LangChain
-           appointment_details = agent.extract_appointment_details(message["content"])
-           
-           # Send a response back to the user
-           response = f"Appointment details extracted: Date: {appointment_details.get('date')}, Time: {appointment_details.get('time')}, Purpose: {appointment_details.get('purpose')}"
-           
-           # Get metadata from the original message
-           metadata = {
-               "phone_number_id": webhook_payload["entry"][0]["changes"][0]["value"]["metadata"]["phone_number_id"],
-               "business_account_id": webhook_payload["entry"][0]["id"]
-           }
-           
-           # Send the response
-           multi_channel.send_message(
-               channel="WHATSAPP",
-               recipient_id=message["sender_id"],
-               message_type="text",
-               content=response,
-               metadata=metadata
-           )
-           
-           return {"success": True, "appointment_details": appointment_details}
-       
-       return {"success": True, "message": "No messages to process"}
+   aws dynamodb create-table \
+     --table-name ConversationHistoryMessages \
+     --attribute-definitions \
+       AttributeName=messageId,AttributeType=S \
+       AttributeName=conversationId,AttributeType=S \
+     --key-schema \
+       AttributeName=messageId,KeyType=HASH \
+       AttributeName=conversationId,KeyType=RANGE \
+     --billing-mode PAY_PER_REQUEST
    ```
 
-5. Enhance the state machine with improved conversation states
+2. **Create a Bedrock Agent**:
+   - Go to AWS Bedrock console
+   - Create a new agent
+   - Upload the `bedrock_agent/schema/agent_schema.json` file
+   - Create action groups for AppointmentCreator, AppointmentManager, and CalendarIntegrator
+   - Set up the agent with Claude 3 Sonnet as the foundation model
 
-6. Implement calendar system integration for availability checking
+3. **Set up AWS End User Messaging**:
+   - Configure AWS End User Messaging for WhatsApp
+   - Link your WhatsApp Business Account
+   - Set up the webhook URL to point to your deployed Lambda function
+
+### Step 2: Deploy Lambda Functions
+
+1. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt -t ./package
+   ```
+
+2. **Package Lambda function**:
+   ```bash
+   cd package
+   zip -r ../lambda_function.zip .
+   cd ..
+   zip -g lambda_function.zip functions/appointment-booking/src/*.py
+   zip -r -g lambda_function.zip functions/appointment-booking/src/bedrock_agent/
+   ```
+
+3. **Deploy Lambda function**:
+   ```bash
+   aws lambda create-function \
+     --function-name AIppointment \
+     --runtime python3.12 \
+     --handler functions.appointment-booking.src.main.lambda_handler \
+     --role arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_LAMBDA_ROLE \
+     --zip-file fileb://lambda_function.zip \
+     --environment "Variables={BEDROCK_AGENT_ID=YOUR_AGENT_ID,BEDROCK_AGENT_ALIAS_ID=YOUR_AGENT_ALIAS_ID,WHATSAPP_PHONE_NUMBER_ID=YOUR_PHONE_NUMBER_ID,WHATSAPP_WEBHOOK_VERIFY_TOKEN=YOUR_VERIFY_TOKEN,DEFAULT_CALENDAR_PROVIDER=GOOGLE}"
+   ```
+
+4. **Set up API Gateway**:
+   ```bash
+   aws apigateway create-rest-api --name AIppointmentAPI
+   ```
+
+### Step 3: Configure Calendar Integration
+
+1. **Google Calendar**:
+   - Create a service account in Google Cloud Console
+   - Download the service account JSON credentials
+   - Store credentials in AWS Secrets Manager
+   - Set the appropriate environment variables in your Lambda function
+
+2. **Microsoft Outlook**:
+   - Register an application in Azure Active Directory
+   - Create a client secret
+   - Store credentials in AWS Secrets Manager
+   - Set the appropriate environment variables in your Lambda function
 
 ## Usage Example
 
-```python
-from langchain_agent_enhanced import LangChainAgentEnhanced
+### Setting Up AWS Bedrock Agent
 
-# Initialize the agent
-agent = LangChainAgentEnhanced(session_id="user-123")
+1. **Create the agent**:
+   - Go to AWS Bedrock console
+   - Create a new agent named "AIppointment"
+   - Upload the `agent_schema.json` file
+   - Set up action groups to match the schema
 
-# Extract appointment details
-result = agent.extract_appointment_details("I need a dental checkup next Wednesday at 2pm")
-print(result)
-# {'date': '2023-09-20', 'time': '14:00', 'purpose': 'dental checkup'}
+2. **Set up agent instructions**:
+   ```
+   You are an appointment scheduling assistant integrated with WhatsApp.
+   Your job is to help users schedule, reschedule, and cancel appointments.
 
-# The agent maintains conversation memory
-agent.get_conversation_history()
-# [{'role': 'user', 'content': 'I need a dental checkup next Wednesday at 2pm'},
-#  {'role': 'assistant', 'content': '{"date": "2023-09-20", "time": "14:00", "purpose": "dental checkup"}'}]
-```
+   Key tasks you can perform:
+   1. Check availability for a specific date
+   2. Create new appointments
+   3. View existing appointments
+   4. Reschedule appointments
+   5. Cancel appointments
+
+   When talking to users:
+   - Be friendly and conversational
+   - Ask for clarification when needed
+   - Confirm details before making changes
+   - Offer alternative time slots if requested times are unavailable
+   - Send confirmation messages with appointment details
+
+   Available time slots are hourly from 9 AM to 5 PM, Monday through Friday.
+   Appointments are 1 hour by default unless specified otherwise.
+   ```
+
+### Testing the Integration
+
+1. **Send a WhatsApp message to your business number**:
+   ```
+   I need a doctor's appointment next Tuesday at 2 PM
+   ```
+
+2. **The system will**:
+   - Process the message through AWS End User Messaging
+   - Invoke the Bedrock Agent to understand the intent and extract appointment details
+   - Use the AppointmentCreator action group to check availability and create the appointment
+   - Respond with a confirmation message
+
+## Monitoring and Troubleshooting
+
+1. **AWS CloudWatch Logs**:
+   - Monitor Lambda function logs
+   - Check for errors in the Bedrock Agent invocation
+
+2. **DynamoDB Tables**:
+   - Check the Appointments table for created appointments
+   - Review ConversationHistory and ConversationHistoryMessages for message flow
+
+## Next Steps
+
+1. **Enhanced WhatsApp Integration**:
+   - Implement template messages for better formatting
+   - Add interactive buttons for appointment confirmation
+   - Support for multimedia messages
+
+2. **Advanced Calendar Integration**:
+   - Implement two-way synchronization
+   - Add support for recurring appointments
+   - Integrate with more calendar providers
+
+3. **Analytics and Monitoring**:
+   - Implement usage analytics
+   - Set up monitoring and alerting
+   - Create dashboards for appointment metrics
+
+## References
+
+1. [AWS Bedrock Agents Documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html)
+2. [AWS End User Messaging for WhatsApp](https://aws.amazon.com/end-user-messaging/whatsapp/)
+3. [Google Calendar API Documentation](https://developers.google.com/calendar/api/guides/overview)
+4. [Microsoft Graph API for Outlook](https://learn.microsoft.com/en-us/graph/api/resources/calendar?view=graph-rest-1.0)
