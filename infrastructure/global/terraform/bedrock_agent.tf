@@ -9,6 +9,7 @@ module "appointment_creator_lambda" {
   runtime       = "python3.12"
   timeout       = 30
   memory_size   = 256
+  source_dir    = "../../../functions/appointment-booking/src"
   
   # Use the specific zip file for this action group
   lambda_zip_file = "../../../functions/appointment-booking/appointment_creator_lambda.zip"
@@ -30,6 +31,7 @@ module "appointment_manager_lambda" {
   runtime       = "python3.12"
   timeout       = 30
   memory_size   = 256
+  source_dir    = "../../../functions/appointment-booking/src"
   
   # Use the specific zip file for this action group
   lambda_zip_file = "../../../functions/appointment-booking/appointment_manager_lambda.zip"
@@ -51,6 +53,7 @@ module "calendar_integrator_lambda" {
   runtime       = "python3.12"
   timeout       = 30
   memory_size   = 256
+  source_dir    = "../../../functions/appointment-booking/src"
   
   # Use the specific zip file for this action group
   lambda_zip_file = "../../../functions/appointment-booking/calendar_integrator_lambda.zip"
