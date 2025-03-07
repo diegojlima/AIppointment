@@ -20,6 +20,21 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      # Testing environment variables
+      AWS_REGION: us-west-2
+      BEDROCK_AGENT_ID: test-agent-id
+      BEDROCK_AGENT_ALIAS_ID: test-agent-alias-id
+      DYNAMODB_TABLE: test-appointments
+      CONVERSATION_HISTORY_TABLE: test-conversation-history
+      WHATSAPP_WEBHOOK_VERIFY_TOKEN: test-webhook-token
+      # Set mock AWS credentials for tests to prevent real AWS calls
+      AWS_ACCESS_KEY_ID: test-access-key
+      AWS_SECRET_ACCESS_KEY: test-secret-key
+      # Disable boto3 loading credentials from ~/.aws/credentials
+      AWS_CONFIG_FILE: /dev/null
+      AWS_SHARED_CREDENTIALS_FILE: /dev/null
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
