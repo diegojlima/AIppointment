@@ -79,59 +79,56 @@ resource "aws_bedrockagent_agent" "appointment_agent" {
   
   foundation_model = var.foundation_model_id
   instruction      = var.agent_instruction
-}
-
-# Bedrock Agent API Schema
-resource "aws_bedrockagent_agent_api_schema" "appointment_schema" {
-  agent_id      = aws_bedrockagent_agent.appointment_agent.id
-  agent_version = "DRAFT"
   
-  s3_data_source {
-    bucket_name = aws_s3_bucket.schema_bucket.bucket
-    object_key  = aws_s3_object.schema_object.key
+  # Include API schema from S3
+  api_schema {
+    s3 {
+      s3_bucket_name = aws_s3_bucket.schema_bucket.bucket
+      s3_object_key  = aws_s3_object.schema_object.key
+    }
   }
+  
+  # Prepare the agent after creation
+  prepare_agent = true
 }
 
 # Bedrock Agent Alias
 resource "aws_bedrockagent_agent_alias" "agent_alias" {
-  agent_id    = aws_bedrockagent_agent.appointment_agent.id
-  alias_name  = var.environment
-  description = "${var.project_name} agent alias for ${var.environment} environment"
+  agent_id          = aws_bedrockagent_agent.appointment_agent.id
+  agent_alias_name  = var.environment
+  description       = "${var.project_name} agent alias for ${var.environment} environment"
 }
 
 # Bedrock Agent Action Groups
 resource "aws_bedrockagent_agent_action_group" "appointment_creator" {
   agent_id          = aws_bedrockagent_agent.appointment_agent.id
+  agent_version     = "DRAFT"
   action_group_name = "AppointmentCreator"
   description       = "Creates appointments and checks availability"
   
   action_group_executor {
-    lambda {
-      lambda_arn = var.appointment_creator_lambda_arn
-    }
+    lambda_arn = var.appointment_creator_lambda_arn
   }
 }
 
 resource "aws_bedrockagent_agent_action_group" "appointment_manager" {
   agent_id          = aws_bedrockagent_agent.appointment_agent.id
+  agent_version     = "DRAFT"
   action_group_name = "AppointmentManager"
   description       = "Manages existing appointments (get, reschedule, cancel)"
   
   action_group_executor {
-    lambda {
-      lambda_arn = var.appointment_manager_lambda_arn
-    }
+    lambda_arn = var.appointment_manager_lambda_arn
   }
 }
 
 resource "aws_bedrockagent_agent_action_group" "calendar_integrator" {
   agent_id          = aws_bedrockagent_agent.appointment_agent.id
+  agent_version     = "DRAFT"
   action_group_name = "CalendarIntegrator"
   description       = "Integrates with external calendar systems"
   
   action_group_executor {
-    lambda {
-      lambda_arn = var.calendar_integrator_lambda_arn
-    }
+    lambda_arn = var.calendar_integrator_lambda_arn
   }
 }
