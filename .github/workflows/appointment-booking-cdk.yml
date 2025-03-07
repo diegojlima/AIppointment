@@ -75,45 +75,27 @@ jobs:
 
   cdk_test:
     runs-on: ubuntu-latest
+    container:
+      image: amazon/aws-cdk:2.103.0
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Set up Node.js (for CDK CLI)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install CDK
-        run: |
-          npm install -g aws-cdk@2.103.0
-
-      - name: Install Dependencies
+      - name: Install Python Dependencies
         run: |
           cd infrastructure/cdk
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install --upgrade pip
-          pip install pytest jsii pytest-cov
-          pip install "aws-cdk-lib==2.103.0" "constructs>=10.0.0"
+          pip install pytest pytest-cov
           pip install -r requirements.txt
           pip install -e .
-
+        
       - name: Run CDK Tests
         run: |
           cd infrastructure/cdk
-          source .venv/bin/activate
           pytest tests/
 
       - name: Run CDK Synth (Dry Run)
         run: |
           cd infrastructure/cdk
-          source .venv/bin/activate
           cdk synth
 
   cdk_deploy:
@@ -121,6 +103,8 @@ jobs:
     needs: [test, cdk_test]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/migrate-to-cdk'
     runs-on: ubuntu-latest
+    container:
+      image: amazon/aws-cdk:2.103.0
     permissions:
       id-token: write   # Required for OIDC
       contents: read    # Required to checkout the repository
@@ -128,20 +112,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Set up Node.js (for CDK CLI)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install CDK
-        run: |
-          npm install -g aws-cdk@2.103.0
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -156,11 +126,6 @@ jobs:
       - name: Install CDK Dependencies
         run: |
           cd infrastructure/cdk
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install --upgrade pip
-          pip install jsii
-          pip install "aws-cdk-lib==2.103.0" "constructs>=10.0.0"
           pip install -r requirements.txt
           pip install -e .
 
@@ -180,20 +145,17 @@ jobs:
       - name: Bootstrap CDK (if needed)
         run: |
           cd infrastructure/cdk
-          source .venv/bin/activate
           cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }}
 
       - name: Deploy CDK Stack
         run: |
           cd infrastructure/cdk
-          source .venv/bin/activate
           cdk deploy --app "python app.py" --require-approval never --context environment=${{ env.ENVIRONMENT }}
 
       - name: Extract Stack Outputs
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/migrate-to-cdk'
         run: |
-          cd infrastructure/cdk
-          source .venv/bin/activate
+          cd infrastructure/cdk 
           echo "BEDROCK_AGENT_ID=$(cdk output --context environment=${{ env.ENVIRONMENT }} AIppointmentStack:BedrockAgentId)" >> $GITHUB_ENV
           echo "BEDROCK_AGENT_ALIAS_ID=$(cdk output --context environment=${{ env.ENVIRONMENT }} AIppointmentStack:BedrockAgentAliasId)" >> $GITHUB_ENV
           echo "API_GATEWAY_URL=$(cdk output --context environment=${{ env.ENVIRONMENT }} AIppointmentStack:ApiGatewayUrl)" >> $GITHUB_ENV
