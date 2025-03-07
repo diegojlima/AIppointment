@@ -12,7 +12,7 @@ on:
 env:
   PROJECT_NAME: aippointment
   AWS_REGION: us-west-2
-  CDK_VERSION: 2.103.0
+  CDK_VERSION: 2.114.1
   ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
 
 jobs:
