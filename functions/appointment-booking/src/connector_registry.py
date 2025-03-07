@@ -64,30 +64,39 @@ class SlackConnector(ConnectorInterface):
         if 'channel' not in metadata:
             raise ValueError("Slack connector metadata must include 'channel'.")
 
-# Mapping of connector types to classes
-CONNECTOR_CLASSES = {
+# Default connector classes (will be expanded with additional connectors in connector_factory.py)
+DEFAULT_CONNECTOR_CLASSES = {
     "HTTP": HttpConnector,
     "SLACK": SlackConnector,
-    # Extend with additional types as needed.
+    # Additional connectors will be registered in connector_factory.py
 }
 
 class ConnectorRegistry:
-    def __init__(self, config_items: list):
+    def __init__(self, config_items: list, connector_classes=None):
         """
         Initialize connector instances based on a configuration list.
         Each item in config_items is a dict with keys:
           - connectorType (e.g., "HTTP", "SLACK")
           - connectorMetadata (dict)
           - connectorConnectionParams (dict)
+          
+        Args:
+            config_items: List of connector configurations
+            connector_classes: Optional dictionary mapping connector types to classes.
+                              If not provided, DEFAULT_CONNECTOR_CLASSES is used.
         """
+        self.connector_classes = connector_classes or DEFAULT_CONNECTOR_CLASSES
         self.connector_instances: Dict[str, ConnectorInterface] = {}
+        
         for config_item in config_items:
             connector_type = config_item.get("connectorType")
             metadata = config_item.get("connectorMetadata")
             connection_params = config_item.get("connectorConnectionParams")
-            connector_class = CONNECTOR_CLASSES.get(connector_type)
+            
+            connector_class = self.connector_classes.get(connector_type)
             if not connector_class:
                 raise ValueError(f"Invalid connector type: {connector_type}")
+                
             connector_class.validate_connector_metadata(metadata)
             key = connector_class.get_full_instance_mapping_path(metadata)
             instance = connector_class(metadata, connection_params)
@@ -95,7 +104,7 @@ class ConnectorRegistry:
             logger.info(f"Initialized connector instance with key: {key}")
 
     def get_connector_instance(self, connector_type: str, metadata: Dict[str, Any]) -> ConnectorInterface:
-        connector_class = CONNECTOR_CLASSES.get(connector_type)
+        connector_class = self.connector_classes.get(connector_type)
         if not connector_class:
             raise ValueError(f"Invalid connector type: {connector_type}")
         key = connector_class.get_full_instance_mapping_path(metadata)
