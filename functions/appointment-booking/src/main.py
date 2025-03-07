@@ -27,9 +27,12 @@ from whatsapp_integration import WhatsAppMessaging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Initialize AWS clients
-bedrock_agent_runtime = boto3.client('bedrock-agent-runtime')
-dynamodb = boto3.client('dynamodb')
+# Get AWS region from environment or use default
+AWS_REGION = os.environ.get('AWS_REGION', 'us-west-2')
+
+# Initialize AWS clients with explicit region
+bedrock_agent_runtime = boto3.client('bedrock-agent-runtime', region_name=AWS_REGION)
+dynamodb = boto3.client('dynamodb', region_name=AWS_REGION)
 
 # Environment variables
 BEDROCK_AGENT_ID = os.environ.get('BEDROCK_AGENT_ID')
