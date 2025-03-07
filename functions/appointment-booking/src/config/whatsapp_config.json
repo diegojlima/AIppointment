@@ -1,0 +1,14 @@
+[
+  {
+    "connectorType": "WHATSAPP",
+    "connectorMetadata": {
+      "phone_number_id": "YOUR_WHATSAPP_PHONE_NUMBER_ID",
+      "business_account_id": "YOUR_WHATSAPP_BUSINESS_ACCOUNT_ID"
+    },
+    "connectorConnectionParams": {
+      "access_token": "YOUR_WHATSAPP_ACCESS_TOKEN",
+      "webhook_verify_token": "YOUR_WEBHOOK_VERIFY_TOKEN",
+      "api_version": "v17.0"
+    }
+  }
+]
