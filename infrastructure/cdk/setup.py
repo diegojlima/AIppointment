@@ -11,7 +11,7 @@ setuptools.setup(
     package_dir={"": "."},
     packages=setuptools.find_packages(),
     install_requires=[
-        "aws-cdk-lib==2.103.0",
+        "aws-cdk-lib==2.114.1",
         "constructs==10.3.0",
         "jsii==1.92.0",
         "boto3==1.29.3",
