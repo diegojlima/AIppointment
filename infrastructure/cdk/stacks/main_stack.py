@@ -4,7 +4,6 @@ from aws_cdk import (
     aws_lambda as lambda_,
     aws_apigateway as apigateway,
     aws_apigatewayv2 as apigatewayv2,
-    aws_apigatewayv2_integrations as apigatewayv2_integrations,
     aws_s3 as s3,
     aws_s3_deployment as s3_deployment,
     aws_iam as iam,
@@ -14,6 +13,7 @@ from aws_cdk import (
     RemovalPolicy,
     CustomResource,
 )
+from aws_cdk.aws_apigatewayv2_integrations import HttpLambdaIntegration
 from constructs import Construct
 import os
 
@@ -174,7 +174,7 @@ class AIppointmentStack(Stack):
         )
         
         # Create HTTP API integration
-        booking_lambda_integration = apigatewayv2_integrations.HttpLambdaIntegration(
+        booking_lambda_integration = HttpLambdaIntegration(
             "BookingIntegration",
             booking_lambda
         )
