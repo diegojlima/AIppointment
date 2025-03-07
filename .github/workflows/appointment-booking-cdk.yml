@@ -98,6 +98,9 @@ jobs:
           cd infrastructure/cdk
           python -m venv .venv
           source .venv/bin/activate
+          pip install --upgrade pip
+          pip install pytest jsii pytest-cov
+          pip install "aws-cdk-lib==2.103.0" "constructs>=10.0.0"
           pip install -r requirements.txt
           pip install -e .
 
@@ -155,6 +158,9 @@ jobs:
           cd infrastructure/cdk
           python -m venv .venv
           source .venv/bin/activate
+          pip install --upgrade pip
+          pip install jsii
+          pip install "aws-cdk-lib==2.103.0" "constructs>=10.0.0"
           pip install -r requirements.txt
           pip install -e .
 

@@ -7,7 +7,11 @@ from stacks.main_stack import AIppointmentStack
 
 def test_dynamodb_tables_created():
     app = cdk.App()
-    stack = AIppointmentStack(app, "TestStack")
+    stack = AIppointmentStack(app, "TestStack", 
+                             environment="test", 
+                             project_name="test-project", 
+                             whatsapp_phone_number_id="test-id", 
+                             whatsapp_webhook_verify_token="test-token")
     template = Template.from_stack(stack)
     
     # Assert that we have created the DynamoDB tables
@@ -27,7 +31,11 @@ def test_dynamodb_tables_created():
 
 def test_lambda_functions_created():
     app = cdk.App()
-    stack = AIppointmentStack(app, "TestStack")
+    stack = AIppointmentStack(app, "TestStack", 
+                             environment="test", 
+                             project_name="test-project", 
+                             whatsapp_phone_number_id="test-id", 
+                             whatsapp_webhook_verify_token="test-token")
     template = Template.from_stack(stack)
     
     # Assert that we have created Lambda functions
@@ -35,7 +43,11 @@ def test_lambda_functions_created():
 
 def test_api_gateway_created():
     app = cdk.App()
-    stack = AIppointmentStack(app, "TestStack")
+    stack = AIppointmentStack(app, "TestStack", 
+                             environment="test", 
+                             project_name="test-project", 
+                             whatsapp_phone_number_id="test-id", 
+                             whatsapp_webhook_verify_token="test-token")
     template = Template.from_stack(stack)
     
     # Assert that we have created API Gateway
@@ -44,7 +56,11 @@ def test_api_gateway_created():
     
 def test_s3_bucket_created():
     app = cdk.App()
-    stack = AIppointmentStack(app, "TestStack")
+    stack = AIppointmentStack(app, "TestStack", 
+                             environment="test", 
+                             project_name="test-project", 
+                             whatsapp_phone_number_id="test-id", 
+                             whatsapp_webhook_verify_token="test-token")
     template = Template.from_stack(stack)
     
     # Assert that we have created S3 bucket for agent schema
@@ -52,7 +68,11 @@ def test_s3_bucket_created():
 
 def test_custom_resource_for_bedrock_agent():
     app = cdk.App()
-    stack = AIppointmentStack(app, "TestStack")
+    stack = AIppointmentStack(app, "TestStack", 
+                             environment="test", 
+                             project_name="test-project", 
+                             whatsapp_phone_number_id="test-id", 
+                             whatsapp_webhook_verify_token="test-token")
     template = Template.from_stack(stack)
     
     # Check that we have created a custom resource for Bedrock Agent
