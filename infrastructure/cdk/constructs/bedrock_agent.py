@@ -29,6 +29,7 @@ class BedrockAgentConstruct(Construct):
         appointment_creator_lambda: lambda_.Function,
         appointment_manager_lambda: lambda_.Function,
         calendar_integrator_lambda: lambda_.Function,
+        foundation_model_id: str = "anthropic.claude-3-haiku-20240307-v1:0",
         **kwargs
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -84,7 +85,7 @@ class BedrockAgentConstruct(Construct):
                 "AgentName": "AIppointmentAgent",
                 "AgentDescription": "Agent for handling appointment scheduling",
                 "AgentRoleArn": agent_role.role_arn,
-                "FoundationModel": "anthropic.claude-3-haiku-20240307-v1:0",
+                "FoundationModel": foundation_model_id,
                 "Instruction": """
                     You are an appointment scheduling assistant integrated with WhatsApp. 
                     Your primary job is to help users schedule, reschedule, and cancel appointments.
@@ -139,6 +140,8 @@ class BedrockAgentConstruct(Construct):
         # Export important resources
         self.agent_role = agent_role
         self.agent_resource = agent_resource
+        self.agent_id = agent_resource.get_att_string("AgentId")
+        self.agent_alias_id = agent_resource.get_att_string("AgentAliasId")
     
     def create_custom_resource_provider(self) -> cr.Provider:
         """

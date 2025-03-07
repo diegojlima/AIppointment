@@ -22,12 +22,15 @@ class AIppointmentStack(Stack):
     Main CDK stack for the AIppointment application, migrated from Terraform.
     """
     
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, construct_id: str, environment: str, project_name: str, whatsapp_phone_number_id: str = None, whatsapp_webhook_verify_token: str = None, foundation_model_id: str = None, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         
-        # Define project name and environment
-        project_name = "aippointment"
-        environment = "prod"
+        # Store parameters
+        self.environment = environment
+        self.project_name = project_name
+        self.whatsapp_phone_number_id = whatsapp_phone_number_id
+        self.whatsapp_webhook_verify_token = whatsapp_webhook_verify_token
+        self.foundation_model_id = foundation_model_id or "anthropic.claude-3-haiku-20240307-v1:0"
         
         # Create DynamoDB tables
         appointments_table = dynamodb.Table(
@@ -158,6 +161,12 @@ class AIppointmentStack(Stack):
             code=lambda_.Code.from_asset(lambda_code_path),
             environment={
                 "DYNAMODB_TABLE": appointments_table.table_name,
+                "CONVERSATION_TABLE": conversation_history_table.table_name,
+                "MESSAGES_TABLE": conversation_messages_table.table_name,
+                "WHATSAPP_PHONE_NUMBER_ID": self.whatsapp_phone_number_id or "",
+                "WHATSAPP_WEBHOOK_VERIFY_TOKEN": self.whatsapp_webhook_verify_token or "",
+                "BEDROCK_MODEL_ID": self.foundation_model_id,
+                "ENVIRONMENT": self.environment,
             },
             timeout=Duration.seconds(30),
             memory_size=128,
@@ -186,13 +195,67 @@ class AIppointmentStack(Stack):
         )
         
         # Create Bedrock Agent related resources
-        self.create_bedrock_agent_resources(
-            project_name=project_name,
-            environment=environment,
-            appointments_table=appointments_table,
-            calendar_credentials_table=calendar_credentials_table,
-            lambda_code_path=lambda_code_path,
-            lambda_role=lambda_role,
+        from infrastructure.cdk.constructs.bedrock_agent import BedrockAgentConstruct
+        
+        bedrock_agent_construct = BedrockAgentConstruct(
+            self, "BedrockAgent",
+            schema_bucket=s3.Bucket(
+                self, "SchemasBucket",
+                bucket_name=f"{project_name}-schemas-{environment}",
+                removal_policy=RemovalPolicy.RETAIN
+            ),
+            appointment_creator_lambda=lambda_.Function(
+                self, "AppointmentCreatorLambda",
+                function_name=f"{project_name}-appointment-creator-{environment}",
+                runtime=lambda_.Runtime.PYTHON_3_12,
+                handler="bedrock_agent.appointment_creator.lambda_handler",
+                code=lambda_.Code.from_asset(lambda_code_path),
+                timeout=Duration.seconds(30),
+                memory_size=256,
+                role=lambda_role
+            ),
+            appointment_manager_lambda=lambda_.Function(
+                self, "AppointmentManagerLambda",
+                function_name=f"{project_name}-appointment-manager-{environment}",
+                runtime=lambda_.Runtime.PYTHON_3_12,
+                handler="bedrock_agent.appointment_manager.lambda_handler",
+                code=lambda_.Code.from_asset(lambda_code_path),
+                timeout=Duration.seconds(30),
+                memory_size=256,
+                role=lambda_role
+            ),
+            calendar_integrator_lambda=lambda_.Function(
+                self, "CalendarIntegratorLambda",
+                function_name=f"{project_name}-calendar-integrator-{environment}",
+                runtime=lambda_.Runtime.PYTHON_3_12,
+                handler="bedrock_agent.calendar_integrator.lambda_handler",
+                code=lambda_.Code.from_asset(lambda_code_path),
+                timeout=Duration.seconds(30),
+                memory_size=256,
+                role=lambda_role
+            ),
+            foundation_model_id=self.foundation_model_id
+        )
+        
+        # Add stack outputs
+        from aws_cdk import CfnOutput
+        
+        CfnOutput(self, "BedrockAgentId",
+            value=bedrock_agent_construct.agent_id,
+            description="ID of the Bedrock Agent",
+            export_name=f"{project_name}-agent-id-{environment}"
+        )
+        
+        CfnOutput(self, "BedrockAgentAliasId",
+            value=bedrock_agent_construct.agent_alias_id,
+            description="ID of the Bedrock Agent Alias",
+            export_name=f"{project_name}-agent-alias-id-{environment}"
+        )
+        
+        CfnOutput(self, "ApiGatewayUrl",
+            value=http_api.api_endpoint,
+            description="URL of the API Gateway",
+            export_name=f"{project_name}-api-url-{environment}"
         )
     
     def create_bedrock_agent_resources(
@@ -308,7 +371,7 @@ class AIppointmentStack(Stack):
                 "AgentName": f"{project_name}-agent-{environment}",
                 "AgentDescription": f"Agent for handling appointment scheduling - {environment}",
                 "AgentRoleArn": bedrock_agent_role.role_arn,
-                "FoundationModel": "anthropic.claude-3-haiku-20240307-v1:0",
+                "FoundationModel": self.foundation_model_id,
                 "Instruction": """
                     You are an appointment scheduling assistant integrated with WhatsApp. 
                     Your primary job is to help users schedule, reschedule, and cancel appointments.
