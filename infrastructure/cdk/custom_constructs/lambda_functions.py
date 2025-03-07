@@ -1,4 +1,4 @@
-from constructs import Construct
+from custom_constructs import Construct
 from aws_cdk import (
     aws_lambda as lambda_,
     aws_iam as iam,

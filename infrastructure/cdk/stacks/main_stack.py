@@ -426,7 +426,7 @@ class AIppointmentStack(Stack):
         the Bedrock Agent using the AWS SDK.
         """
         # Create the Lambda function code
-        function_code = """
+        function_code = '''
 import boto3
 import cfnresponse
 import os
@@ -735,7 +735,7 @@ def handler(event, context):
             event.get('PhysicalResourceId', context.log_stream_name),
             str(e)
         )
-        """
+        '''
         
         # Create Lambda function for custom resource
         provider_function = lambda_.Function(
