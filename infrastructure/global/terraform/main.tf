@@ -42,7 +42,7 @@ resource "aws_dynamodb_table" "terraform_state_lock" {
 }
 
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "delima-appointment-state-tf"
+  bucket = "delima-aippointment-terraform-state"
   tags = {
     Name = "Terraform State Bucket"
   }
