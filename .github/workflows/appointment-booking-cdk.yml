@@ -18,6 +18,7 @@ env:
   # Common variables
   PROJECT_NAME: aippointment
   AWS_REGION: us-west-2
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   # Default environment is used for pull requests
   ENVIRONMENT: ${{ github.event_name == 'pull_request' && 'dev' || github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
   # WhatsApp integration - using GitHub variables to avoid exposing secrets
@@ -76,13 +77,14 @@ jobs:
   cdk_test:
     runs-on: ubuntu-latest
     container:
-      image: amazon/aws-cdk:2.103.0
+      image: jsii/superchain:1-buster-slim-node18
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Python Dependencies
+      - name: Install CDK CLI and Python Dependencies
         run: |
+          npm install -g aws-cdk@2.103.0
           cd infrastructure/cdk
           pip install pytest pytest-cov
           pip install -r requirements.txt
@@ -104,7 +106,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/migrate-to-cdk'
     runs-on: ubuntu-latest
     container:
-      image: amazon/aws-cdk:2.103.0
+      image: jsii/superchain:1-buster-slim-node18
     permissions:
       id-token: write   # Required for OIDC
       contents: read    # Required to checkout the repository
@@ -123,8 +125,9 @@ jobs:
           # role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           # role-session-name: GitHubActionsDeployment
 
-      - name: Install CDK Dependencies
+      - name: Install CDK CLI and Dependencies
         run: |
+          npm install -g aws-cdk@2.103.0
           cd infrastructure/cdk
           pip install -r requirements.txt
           pip install -e .
