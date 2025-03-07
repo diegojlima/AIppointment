@@ -1,8 +1,8 @@
 # infrastructure/modules/cloud_function/main.tf
 
 resource "aws_lambda_function" "function" {
-  filename         = "${path.module}/../../../functions/appointment-booking/lambda_function.zip"
-  source_code_hash = filebase64sha256("${path.module}/../../../functions/appointment-booking/lambda_function.zip")
+  filename         = var.lambda_zip_file != null ? var.lambda_zip_file : "${path.module}/../../../functions/appointment-booking/lambda_function.zip"
+  source_code_hash = filebase64sha256(var.lambda_zip_file != null ? var.lambda_zip_file : "${path.module}/../../../functions/appointment-booking/lambda_function.zip")
   function_name    = var.function_name
   role             = aws_iam_role.lambda_role.arn
   handler          = var.handler
@@ -76,6 +76,7 @@ resource "aws_iam_role_policy" "bedrock_access" {
 }
 
 resource "aws_apigatewayv2_integration" "lambda_integration" {
+  count             = var.api_gateway_id != null && var.route_key != null ? 1 : 0
   api_id             = var.api_gateway_id
   integration_type   = "AWS_PROXY"
   integration_uri    = aws_lambda_function.function.invoke_arn
@@ -83,12 +84,14 @@ resource "aws_apigatewayv2_integration" "lambda_integration" {
 }
 
 resource "aws_apigatewayv2_route" "lambda_route" {
+  count     = var.api_gateway_id != null && var.route_key != null ? 1 : 0
   api_id    = var.api_gateway_id
   route_key = var.route_key
-  target    = "integrations/${aws_apigatewayv2_integration.lambda_integration.id}"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda_integration[0].id}"
 }
 
 resource "aws_lambda_permission" "api_gw" {
+  count         = var.api_gateway_id != null && var.api_gateway_execution_arn != null ? 1 : 0
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.function.function_name

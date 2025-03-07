@@ -10,14 +10,34 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
-# Import the module to test
-from main import lambda_handler, handle_whatsapp_message, invoke_bedrock_agent
+# Set AWS_REGION environment variable for tests
+os.environ['AWS_REGION'] = 'us-west-2'
+
+# Mock boto3 client before importing main
+with patch('boto3.client') as mock_boto3_client:
+    # For bedrock-agent-runtime
+    bedrock_mock = MagicMock()
+    # For dynamodb
+    dynamodb_mock = MagicMock()
+    
+    # Configure mock_boto3_client to return our mocks
+    def side_effect(service_name, **kwargs):
+        if service_name == 'bedrock-agent-runtime':
+            return bedrock_mock
+        elif service_name == 'dynamodb':
+            return dynamodb_mock
+        return MagicMock()
+    
+    mock_boto3_client.side_effect = side_effect
+    
+    # Now import the module to test
+    from main import lambda_handler, handle_whatsapp_message, invoke_bedrock_agent
 
 @pytest.fixture
 def mock_dynamodb_tables():
     with mock_aws():
         # Create a DynamoDB client
-        dynamodb = boto3.resource('dynamodb')
+        dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
         
         # Create the tables
         conversation_table = dynamodb.create_table(
@@ -58,6 +78,7 @@ def mock_dynamodb_tables():
 
 @pytest.fixture
 def mock_environment(monkeypatch):
+    monkeypatch.setenv('AWS_REGION', 'us-west-2')
     monkeypatch.setenv('BEDROCK_AGENT_ID', 'test-agent-id')
     monkeypatch.setenv('BEDROCK_AGENT_ALIAS_ID', 'test-agent-alias-id')
     monkeypatch.setenv('WHATSAPP_PHONE_NUMBER_ID', 'test-phone-number-id')

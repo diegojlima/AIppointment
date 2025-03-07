@@ -32,8 +32,8 @@ jobs:
       AWS_ACCESS_KEY_ID: test-access-key
       AWS_SECRET_ACCESS_KEY: test-secret-key
       # Disable boto3 loading credentials from ~/.aws/credentials
-      AWS_CONFIG_FILE: /dev/null
-      AWS_SHARED_CREDENTIALS_FILE: /dev/null
+      AWS_CONFIG_FILE: /tmp/aws_config
+      AWS_SHARED_CREDENTIALS_FILE: /tmp/aws_credentials
 
     steps:
       - name: Checkout Repository
@@ -50,6 +50,15 @@ jobs:
           pip install pytest pytest-mock boto3 moto
           cd functions/appointment-booking
           pip install -r requirements.txt
+
+      - name: Configure AWS for Tests
+        run: |
+          mkdir -p /tmp/.aws
+          echo "[default]" > /tmp/aws_config
+          echo "region = us-west-2" >> /tmp/aws_config
+          echo "[default]" > /tmp/aws_credentials
+          echo "aws_access_key_id = test-access-key" >> /tmp/aws_credentials
+          echo "aws_secret_access_key = test-secret-key" >> /tmp/aws_credentials
 
       - name: Run Tests
         run: |

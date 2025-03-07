@@ -141,7 +141,7 @@ resource "aws_dynamodb_table" "conversation_messages" {
 
 # Bedrock Agent for appointment booking
 module "bedrock_agent" {
-  source = "../modules/bedrock_agent"
+  source = "../../modules/bedrock_agent"
 
   project_name  = local.project_name
   environment   = local.environment
