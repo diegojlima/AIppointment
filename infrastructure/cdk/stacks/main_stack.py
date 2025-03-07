@@ -195,7 +195,7 @@ class AIppointmentStack(Stack):
         )
         
         # Create Bedrock Agent related resources
-        from infrastructure.cdk.constructs.bedrock_agent import BedrockAgentConstruct
+        from ..constructs.bedrock_agent import BedrockAgentConstruct
         
         bedrock_agent_construct = BedrockAgentConstruct(
             self, "BedrockAgent",
