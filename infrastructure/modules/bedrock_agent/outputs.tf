@@ -2,12 +2,12 @@
 
 output "agent_id" {
   description = "The ID of the Bedrock Agent"
-  value       = aws_bedrock_agent.appointment_agent.id
+  value       = aws_bedrockagent_agent.appointment_agent.id
 }
 
 output "agent_alias_id" {
   description = "The ID of the Bedrock Agent Alias"
-  value       = aws_bedrock_agent_alias.agent_alias.id
+  value       = aws_bedrockagent_agent_alias.agent_alias.id
 }
 
 output "schema_bucket_name" {
