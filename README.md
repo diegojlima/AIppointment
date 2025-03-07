@@ -10,13 +10,16 @@ AIppointment acts as an intelligent assistant that enables users to book appoint
 
 - **Natural Language Understanding**: Extract appointment details from free-form text using Claude 3 on AWS Bedrock
 - **Multi-channel Support**: Architecture designed for WhatsApp Business and other messaging platforms
-- **Intelligent Conversation**: Enhanced state machine with comprehensive conversation flows
+- **Intelligent Conversation**: AWS Bedrock Agents for natural conversation flows
   - Appointment booking and validation
   - Conflict resolution for scheduling conflicts
   - Disambiguation of unclear inputs
   - Rescheduling and cancellation workflows
   - Appointment lookup and reminders
-- **LangChain Integration**: Structured AI interactions with memory and tools
+- **Modular Action Groups**: Specialized handlers for different functionality domains
+  - AppointmentCreator for booking new appointments
+  - AppointmentManager for handling existing appointments
+  - CalendarIntegrator for calendar system integration
 - **WhatsApp Business Integration**: Direct connection to WhatsApp Business API
 - **Intent Classification**: Route messages based on detected user intent
 - **Calendar Integration**: Connects with Google Calendar and Microsoft Outlook
@@ -38,11 +41,11 @@ The system follows a serverless architecture pattern built on AWS services:
 ### Component Overview
 
 1. **Input Adapter**: Normalizes inputs from various channels
-2. **Intent Router**: Classifies messages and routes to appropriate handlers
-3. **Appointment Processor**: Extracts and validates appointment details
-4. **State Machine**: Manages conversation flow across multiple interactions
-5. **Connector Registry**: Interfaces with external communication channels
-6. **Calendar Integration**: Connects with external calendar systems
+2. **AWS Bedrock Agent**: Manages conversation flow and understands user intents
+3. **Action Groups**: Specialized handlers for different appointment operations
+4. **Calendar Integration**: Connects with external calendar systems (Google, Outlook)
+5. **WhatsApp Integration**: Direct integration with WhatsApp via AWS End User Messaging
+6. **DynamoDB Storage**: Persistent storage for appointments and conversation history
 
 ## Getting Started
 
@@ -97,7 +100,7 @@ The system follows a serverless architecture pattern built on AWS services:
 
 #### CI/CD Pipeline
 
-The project includes a GitHub Actions workflow that automatically deploys changes when code is pushed to the main branch:
+The project includes a GitHub Actions workflow that automatically deploys changes when code is pushed to the main branch (requires setup):
 
 1. Code is pushed to the main branch
 2. GitHub Actions workflow is triggered
@@ -144,12 +147,14 @@ The project includes a GitHub Actions workflow that automatically deploys change
 
 - [x] Core appointment extraction and booking
 - [x] AWS infrastructure setup
-- [x] Basic conversation state management
-- [x] LangChain integration for better AI interactions
+- [x] AWS Bedrock Agents integration
 - [x] WhatsApp Business API integration
-- [x] Enhanced state machine with more states and transitions
+- [x] Well-defined OpenAPI schema for agent understanding
 - [x] Calendar system integration (Google Calendar, Outlook)
-- [ ] Appointment reminders
+- [x] Robust integration testing for end-to-end flows
+- [x] Abstract interfaces for calendar service providers
+- [ ] Appointment reminders and notifications
+- [ ] Enhanced error handling and recovery
 - [ ] Multi-language support
 - [ ] User management system
 
