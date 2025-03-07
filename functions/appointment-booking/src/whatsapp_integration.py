@@ -18,6 +18,9 @@ from typing import Dict, Any, Optional, List
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# Get AWS region from environment or use default
+AWS_REGION = os.environ.get('AWS_REGION', 'us-west-2')
+
 class WhatsAppMessaging:
     """
     Handles messaging through WhatsApp Business API via AWS End User Messaging
@@ -34,7 +37,7 @@ class WhatsAppMessaging:
         if messaging_client:
             self.messaging = messaging_client
         else:
-            self.messaging = boto3.client('connectmessagingservice')
+            self.messaging = boto3.client('connectmessagingservice', region_name=AWS_REGION)
         
         # Get the WhatsApp phone number ID from environment variables
         self.phone_number_id = os.environ.get('WHATSAPP_PHONE_NUMBER_ID')

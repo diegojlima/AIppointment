@@ -20,6 +20,12 @@ variable "source_dir" {
   description = "The source directory containing the Lambda function code"
 }
 
+variable "lambda_zip_file" {
+  type        = string
+  description = "Path to a pre-packaged Lambda function zip file"
+  default     = null
+}
+
 variable "environment_variables" {
   type        = map(string)
   description = "Environment variables for the Lambda function"
@@ -46,14 +52,17 @@ variable "dynamodb_table_arn" {
 variable "api_gateway_id" {
   type        = string
   description = "The ID of the API Gateway"
+  default     = null
 }
 
 variable "api_gateway_execution_arn" {
   type        = string
   description = "The execution ARN of the API Gateway"
+  default     = null
 }
 
 variable "route_key" {
   type        = string
   description = "The route key for the API Gateway route"
+  default     = null
 }

@@ -1,8 +1,8 @@
-# infrastructure/modules/cloud_function/main.tf
+# infrastructure/modules/bedrock_lambda/main.tf
 
 resource "aws_lambda_function" "function" {
-  filename         = var.lambda_zip_file != null ? var.lambda_zip_file : "${path.module}/../../../functions/appointment-booking/lambda_function.zip"
-  source_code_hash = filebase64sha256(var.lambda_zip_file != null ? var.lambda_zip_file : "${path.module}/../../../functions/appointment-booking/lambda_function.zip")
+  filename         = var.lambda_zip_file
+  source_code_hash = filebase64sha256(var.lambda_zip_file)
   function_name    = var.function_name
   role             = aws_iam_role.lambda_role.arn
   handler          = var.handler
@@ -49,7 +49,9 @@ resource "aws_iam_role_policy" "dynamodb_access" {
         "dynamodb:PutItem",
         "dynamodb:GetItem",
         "dynamodb:UpdateItem",
-        "dynamodb:DeleteItem"
+        "dynamodb:DeleteItem",
+        "dynamodb:Query",
+        "dynamodb:Scan"
       ]
       Resource = var.dynamodb_table_arn
     }]
@@ -67,34 +69,28 @@ resource "aws_iam_role_policy" "bedrock_access" {
       Action = [
         "bedrock:InvokeModel",
         "bedrock:ListFoundationModels",
-        "bedrock-runtime:Converse",
-        "bedrock-runtime:ConverseStream"
+        "bedrock-runtime:InvokeModel",
+        "bedrock-agent-runtime:InvokeAgent"
       ]
       Resource = "*"
     }]
   })
 }
 
-resource "aws_apigatewayv2_integration" "lambda_integration" {
-  count             = var.api_gateway_id != null && var.route_key != null ? 1 : 0
-  api_id             = var.api_gateway_id
-  integration_type   = "AWS_PROXY"
-  integration_uri    = aws_lambda_function.function.invoke_arn
-  integration_method = "POST"
-}
+# Add additional policies for calendar integration
+resource "aws_iam_role_policy" "calendar_access" {
+  count = var.enable_calendar_integration ? 1 : 0
+  name  = "calendar_access"
+  role  = aws_iam_role.lambda_role.id
 
-resource "aws_apigatewayv2_route" "lambda_route" {
-  count     = var.api_gateway_id != null && var.route_key != null ? 1 : 0
-  api_id    = var.api_gateway_id
-  route_key = var.route_key
-  target    = "integrations/${aws_apigatewayv2_integration.lambda_integration[0].id}"
-}
-
-resource "aws_lambda_permission" "api_gw" {
-  count         = var.api_gateway_id != null && var.api_gateway_execution_arn != null ? 1 : 0
-  statement_id  = "AllowExecutionFromAPIGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.function.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${var.api_gateway_execution_arn}/*/*"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "secretsmanager:GetSecretValue"
+      ]
+      Resource = "*"
+    }]
+  })
 }
