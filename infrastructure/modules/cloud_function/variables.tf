@@ -18,6 +18,7 @@ variable "runtime" {
 variable "source_dir" {
   type        = string
   description = "The source directory containing the Lambda function code"
+  default     = "../../../functions/appointment-booking/src"
 }
 
 variable "lambda_zip_file" {
