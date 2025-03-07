@@ -98,17 +98,20 @@ resource "aws_bedrockagent_agent_action_group" "appointment_creator" {
   action_group_name = "AppointmentCreator"
   description       = "Creates appointments and checks availability"
   
-  action_group_executor {
-    lambda_arn = var.appointment_creator_lambda_arn
-  }
+  # Lambda function executor
+  action_group_executor = jsonencode({
+    lambda = {
+      lambda_arn = var.appointment_creator_lambda_arn
+    }
+  })
   
-  # Add the schema from S3
-  api_schema {
-    s3 {
+  # API Schema from S3
+  api_schema = jsonencode({
+    s3 = {
       s3_bucket_name = aws_s3_bucket.schema_bucket.bucket
       s3_object_key  = aws_s3_object.schema_object.key
     }
-  }
+  })
 }
 
 resource "aws_bedrockagent_agent_action_group" "appointment_manager" {
@@ -117,17 +120,20 @@ resource "aws_bedrockagent_agent_action_group" "appointment_manager" {
   action_group_name = "AppointmentManager"
   description       = "Manages existing appointments (get, reschedule, cancel)"
   
-  action_group_executor {
-    lambda_arn = var.appointment_manager_lambda_arn
-  }
+  # Lambda function executor
+  action_group_executor = jsonencode({
+    lambda = {
+      lambda_arn = var.appointment_manager_lambda_arn
+    }
+  })
   
-  # Reference the same schema
-  api_schema {
-    s3 {
+  # API Schema from S3
+  api_schema = jsonencode({
+    s3 = {
       s3_bucket_name = aws_s3_bucket.schema_bucket.bucket
       s3_object_key  = aws_s3_object.schema_object.key
     }
-  }
+  })
 }
 
 resource "aws_bedrockagent_agent_action_group" "calendar_integrator" {
@@ -136,15 +142,18 @@ resource "aws_bedrockagent_agent_action_group" "calendar_integrator" {
   action_group_name = "CalendarIntegrator"
   description       = "Integrates with external calendar systems"
   
-  action_group_executor {
-    lambda_arn = var.calendar_integrator_lambda_arn
-  }
+  # Lambda function executor
+  action_group_executor = jsonencode({
+    lambda = {
+      lambda_arn = var.calendar_integrator_lambda_arn
+    }
+  })
   
-  # Reference the same schema
-  api_schema {
-    s3 {
+  # API Schema from S3
+  api_schema = jsonencode({
+    s3 = {
       s3_bucket_name = aws_s3_bucket.schema_bucket.bucket
       s3_object_key  = aws_s3_object.schema_object.key
     }
-  }
+  })
 }
