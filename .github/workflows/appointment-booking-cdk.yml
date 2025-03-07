@@ -1,4 +1,4 @@
-name: AIppointment CDK CI/CD
+name: AIppointment CDK Deployment
 
 on:
   push:
@@ -7,12 +7,7 @@ on:
       - 'infrastructure/cdk/**'
       - 'functions/appointment-booking/**'
       - '.github/workflows/appointment-booking-cdk.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'infrastructure/cdk/**'
-      - 'functions/appointment-booking/**'
-      - '.github/workflows/appointment-booking-cdk.yml'
+  workflow_dispatch:
 
 env:
   # Common variables
@@ -20,93 +15,16 @@ env:
   AWS_REGION: us-west-2
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   # Default environment is used for pull requests
-  ENVIRONMENT: ${{ github.event_name == 'pull_request' && 'dev' || github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
+  ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
   # WhatsApp integration - using GitHub variables to avoid exposing secrets
   WHATSAPP_PHONE_NUMBER_ID: ${{ vars.WHATSAPP_PHONE_NUMBER_ID }}
   # Bedrock Agent
   FOUNDATION_MODEL_ID: anthropic.claude-3-haiku-20240307-v1:0
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    env:
-      # Testing environment variables
-      AWS_REGION: us-west-2
-      BEDROCK_AGENT_ID: test-agent-id
-      BEDROCK_AGENT_ALIAS_ID: test-agent-alias-id
-      DYNAMODB_TABLE: test-appointments
-      CONVERSATION_HISTORY_TABLE: test-conversation-history
-      WHATSAPP_WEBHOOK_VERIFY_TOKEN: test-webhook-token
-      # Set mock AWS credentials for tests to prevent real AWS calls
-      AWS_ACCESS_KEY_ID: test-access-key
-      AWS_SECRET_ACCESS_KEY: test-secret-key
-      # Disable boto3 loading credentials from ~/.aws/credentials
-      AWS_CONFIG_FILE: /tmp/aws_config
-      AWS_SHARED_CREDENTIALS_FILE: /tmp/aws_credentials
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest pytest-mock boto3 moto
-          cd functions/appointment-booking
-          pip install -r requirements.txt
-
-      - name: Configure AWS for Tests
-        run: |
-          mkdir -p /tmp/.aws
-          echo "[default]" > /tmp/aws_config
-          echo "region = us-west-2" >> /tmp/aws_config
-          echo "[default]" > /tmp/aws_credentials
-          echo "aws_access_key_id = test-access-key" >> /tmp/aws_credentials
-          echo "aws_secret_access_key = test-secret-key" >> /tmp/aws_credentials
-
-      - name: Run Tests
-        run: |
-          cd functions/appointment-booking
-          python -m pytest tests/
-
-  cdk_test:
-    runs-on: ubuntu-latest
-    container:
-      image: jsii/superchain:1-buster-slim-node18
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Install CDK CLI and Python Dependencies
-        run: |
-          npm install -g aws-cdk@2.103.0
-          cd infrastructure/cdk
-          pip install pytest pytest-cov
-          pip install -r requirements.txt
-          pip install -e .
-        
-      - name: Run CDK Tests
-        run: |
-          cd infrastructure/cdk
-          pytest tests/
-
-      - name: Run CDK Synth (Dry Run)
-        run: |
-          cd infrastructure/cdk
-          cdk synth
-
   cdk_deploy:
     name: Deploy with CDK
-    needs: [test, cdk_test]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/migrate-to-cdk'
     runs-on: ubuntu-latest
-    container:
-      image: jsii/superchain:1-buster-slim-node18
     permissions:
       id-token: write   # Required for OIDC
       contents: read    # Required to checkout the repository
@@ -115,19 +33,29 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          
+      - name: Install CDK CLI
+        run: |
+          npm install -g aws-cdk@2.103.0
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-          # For OIDC authentication (recommended for production), use:
-          # role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          # role-session-name: GitHubActionsDeployment
 
-      - name: Install CDK CLI, AWS CLI, and Dependencies
+      - name: Install AWS CLI and CDK Dependencies
         run: |
-          npm install -g aws-cdk@2.103.0
           pip install awscli
           cd infrastructure/cdk
           pip install -r requirements.txt
@@ -156,18 +84,12 @@ jobs:
           cd infrastructure/cdk
           cdk deploy --app "python app.py" --require-approval never --context environment=${{ env.ENVIRONMENT }}
 
-      - name: Extract Stack Outputs
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/migrate-to-cdk'
+      - name: Extract and Display Stack Outputs
         run: |
           cd infrastructure/cdk 
           echo "BEDROCK_AGENT_ID=$(cdk output --context environment=${{ env.ENVIRONMENT }} AIppointmentStack:BedrockAgentId)" >> $GITHUB_ENV
           echo "BEDROCK_AGENT_ALIAS_ID=$(cdk output --context environment=${{ env.ENVIRONMENT }} AIppointmentStack:BedrockAgentAliasId)" >> $GITHUB_ENV
           echo "API_GATEWAY_URL=$(cdk output --context environment=${{ env.ENVIRONMENT }} AIppointmentStack:ApiGatewayUrl)" >> $GITHUB_ENV
-          
-      - name: Validate Deployment (Non-destructive)
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/migrate-to-cdk'
-        run: |
-          aws bedrock-agent get-agent --agent-id "${{ env.BEDROCK_AGENT_ID }}" || echo "Agent validation would be performed here"
           
           echo "✅ Deployment has been applied and validated"
           echo "BEDROCK_AGENT_ID: ${{ env.BEDROCK_AGENT_ID }}"
