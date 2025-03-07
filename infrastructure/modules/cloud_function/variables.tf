@@ -18,6 +18,13 @@ variable "runtime" {
 variable "source_dir" {
   type        = string
   description = "The source directory containing the Lambda function code"
+  default     = "../../../functions/appointment-booking/src"
+}
+
+variable "lambda_zip_file" {
+  type        = string
+  description = "Path to a pre-packaged Lambda function zip file"
+  default     = null
 }
 
 variable "environment_variables" {
@@ -46,14 +53,17 @@ variable "dynamodb_table_arn" {
 variable "api_gateway_id" {
   type        = string
   description = "The ID of the API Gateway"
+  default     = null
 }
 
 variable "api_gateway_execution_arn" {
   type        = string
   description = "The execution ARN of the API Gateway"
+  default     = null
 }
 
 variable "route_key" {
   type        = string
   description = "The route key for the API Gateway route"
+  default     = null
 }
