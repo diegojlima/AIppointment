@@ -116,6 +116,7 @@ jobs:
         with:
           name: lambda-packages
           path: |
+            functions/appointment-booking/appointment_booking_lambda.zip
             functions/appointment-booking/appointment_creator_lambda.zip
             functions/appointment-booking/appointment_manager_lambda.zip
             functions/appointment-booking/calendar_integrator_lambda.zip

@@ -58,6 +58,7 @@ create_lambda_package() {
 }
 
 # Create individual lambda packages for each action group
+create_lambda_package "appointment_booking" "main" "appointment_booking_lambda.zip"
 create_lambda_package "appointment_creator" "appointment_creator" "appointment_creator_lambda.zip"
 create_lambda_package "appointment_manager" "appointment_manager" "appointment_manager_lambda.zip"
 create_lambda_package "calendar_integrator" "calendar_integrator" "calendar_integrator_lambda.zip"
