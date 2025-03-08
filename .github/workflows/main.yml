@@ -139,6 +139,14 @@ jobs:
           name: lambda-packages
           path: functions/appointment-booking/
 
+      - name: Verify Lambda Packages Exist
+        run: |
+          echo "Checking Lambda packages..."
+          ls -la functions/appointment-booking/
+          
+          # Create a file to indicate the Lambda files have been downloaded
+          echo "Lambda packages downloaded" > functions/appointment-booking/lambda_packages_ready.txt
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:

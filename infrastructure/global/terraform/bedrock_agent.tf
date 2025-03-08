@@ -5,13 +5,15 @@ module "appointment_creator_lambda" {
   source = "../../modules/cloud_function"
 
   function_name = "${local.project_name}-appointment-creator"
+  description   = "Lambda function for appointment creation in the AIppointment system"
   handler       = "bedrock_agent.appointment_creator.lambda_handler"
   runtime       = "python3.12"
   timeout       = 30
   memory_size   = 256
   
-  # Use the specific zip file for this action group
-  lambda_zip_file = "../../../functions/appointment-booking/appointment_creator_lambda.zip"
+  # Use the pre-built package approach with proper path handling
+  create_package = false
+  lambda_zip_file = "${path.root}/functions/appointment-booking/appointment_creator_lambda.zip"
   
   environment_variables = {
     DYNAMODB_TABLE = aws_dynamodb_table.appointments.name
@@ -26,13 +28,15 @@ module "appointment_manager_lambda" {
   source = "../../modules/cloud_function"
 
   function_name = "${local.project_name}-appointment-manager"
+  description   = "Lambda function for appointment management in the AIppointment system"
   handler       = "bedrock_agent.appointment_manager.lambda_handler"
   runtime       = "python3.12"
   timeout       = 30
   memory_size   = 256
   
-  # Use the specific zip file for this action group
-  lambda_zip_file = "../../../functions/appointment-booking/appointment_manager_lambda.zip"
+  # Use the pre-built package approach with proper path handling
+  create_package = false
+  lambda_zip_file = "${path.root}/functions/appointment-booking/appointment_manager_lambda.zip"
   
   environment_variables = {
     DYNAMODB_TABLE = aws_dynamodb_table.appointments.name
@@ -47,13 +51,15 @@ module "calendar_integrator_lambda" {
   source = "../../modules/cloud_function"
 
   function_name = "${local.project_name}-calendar-integrator"
+  description   = "Lambda function for calendar integration in the AIppointment system"
   handler       = "bedrock_agent.calendar_integrator.lambda_handler"
   runtime       = "python3.12"
   timeout       = 30
   memory_size   = 256
   
-  # Use the specific zip file for this action group
-  lambda_zip_file = "../../../functions/appointment-booking/calendar_integrator_lambda.zip"
+  # Use the pre-built package approach with proper path handling
+  create_package = false
+  lambda_zip_file = "${path.root}/functions/appointment-booking/calendar_integrator_lambda.zip"
   
   environment_variables = {
     DYNAMODB_TABLE              = aws_dynamodb_table.appointments.name
@@ -139,28 +145,6 @@ resource "aws_dynamodb_table" "conversation_messages" {
   }
 }
 
-# Lambda permissions for Bedrock Agent
-resource "aws_lambda_permission" "appointment_creator_permission" {
-  statement_id  = "AllowBedrockInvocation"
-  action        = "lambda:InvokeFunction"
-  function_name = module.appointment_creator_lambda.function_name
-  principal     = "bedrock.amazonaws.com"
-}
-
-resource "aws_lambda_permission" "appointment_manager_permission" {
-  statement_id  = "AllowBedrockInvocation"
-  action        = "lambda:InvokeFunction"
-  function_name = module.appointment_manager_lambda.function_name
-  principal     = "bedrock.amazonaws.com"
-}
-
-resource "aws_lambda_permission" "calendar_integrator_permission" {
-  statement_id  = "AllowBedrockInvocation"
-  action        = "lambda:InvokeFunction"
-  function_name = module.calendar_integrator_lambda.function_name
-  principal     = "bedrock.amazonaws.com"
-}
-
 # Bedrock Agent for appointment booking
 module "bedrock_agent" {
   source = "../../modules/bedrock_agent"
@@ -169,7 +153,7 @@ module "bedrock_agent" {
   environment   = local.environment
   
   # Path to the OpenAPI schema
-  schema_path   = "../../../functions/appointment-booking/src/bedrock_agent/schema/agent_schema.json"
+  schema_path   = "${path.root}/functions/appointment-booking/src/bedrock_agent/schema/agent_schema.json"
   
   # Claude 3 Haiku model
   foundation_model = "anthropic.claude-3-haiku-20240307-v1:0"
