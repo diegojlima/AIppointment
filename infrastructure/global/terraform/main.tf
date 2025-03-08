@@ -75,7 +75,7 @@ module "appointment_booking_lambda" {
   runtime       = "python3.12"
 
   # Use pre-built package instead of source_path
-  create_package = false
+  create_package  = false
   lambda_zip_file = "${path.root}/functions/appointment-booking/appointment_booking_lambda.zip"
 
   environment_variables = {

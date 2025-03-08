@@ -12,7 +12,7 @@ module "appointment_creator_lambda" {
   memory_size   = 256
 
   # Use pre-built package instead of source_path
-  create_package = false
+  create_package  = false
   lambda_zip_file = "${path.root}/functions/appointment-booking/appointment_creator_lambda.zip"
 
   environment_variables = {
@@ -35,7 +35,7 @@ module "appointment_manager_lambda" {
   memory_size   = 256
 
   # Use pre-built package instead of source_path
-  create_package = false
+  create_package  = false
   lambda_zip_file = "${path.root}/functions/appointment-booking/appointment_manager_lambda.zip"
 
   environment_variables = {
@@ -58,7 +58,7 @@ module "calendar_integrator_lambda" {
   memory_size   = 256
 
   # Use pre-built package instead of source_path
-  create_package = false
+  create_package  = false
   lambda_zip_file = "${path.root}/functions/appointment-booking/calendar_integrator_lambda.zip"
 
   environment_variables = {
