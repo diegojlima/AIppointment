@@ -3,7 +3,7 @@
 terraform {
   # Temporarily using local state for testing
   backend "local" {}
-  
+
   # Original S3 backend (commented out until permissions are fixed)
   # backend "s3" {
   #   bucket         = "delima-aippointment-terraform-state"

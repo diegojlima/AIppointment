@@ -12,7 +12,7 @@ module "appointment_creator_lambda" {
   memory_size   = 256
 
   # Use source path approach instead
-  create_package  = true
+  create_package = true
   source_path    = "/Users/diegolima/Documents/projects/AIppointment/functions/appointment-booking/src/bedrock_agent/appointment_creator.py"
 
   environment_variables = {
@@ -35,7 +35,7 @@ module "appointment_manager_lambda" {
   memory_size   = 256
 
   # Use source path approach instead
-  create_package  = true
+  create_package = true
   source_path    = "/Users/diegolima/Documents/projects/AIppointment/functions/appointment-booking/src/bedrock_agent/appointment_manager.py"
 
   environment_variables = {
@@ -58,7 +58,7 @@ module "calendar_integrator_lambda" {
   memory_size   = 256
 
   # Use source path approach instead
-  create_package  = true
+  create_package = true
   source_path    = "/Users/diegolima/Documents/projects/AIppointment/functions/appointment-booking/src/bedrock_agent/calendar_integrator.py"
 
   environment_variables = {

@@ -21,7 +21,7 @@ module "lambda_function" {
   publish       = var.publish
 
   # Add unique suffix to policy names
-  role_name         = "${var.function_name}-role-${random_string.policy_suffix.result}"
+  role_name = "${var.function_name}-role-${random_string.policy_suffix.result}"
 
   # Source path or existing package options
   create_package         = var.create_package
