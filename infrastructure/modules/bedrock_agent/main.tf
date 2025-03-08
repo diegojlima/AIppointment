@@ -12,8 +12,8 @@ resource "aws_s3_bucket" "schema_bucket" {
 resource "aws_s3_object" "schema_object" {
   bucket       = aws_s3_bucket.schema_bucket.id
   key          = "agent_schema.json"
-  source       = "/Users/diegolima/Documents/projects/AIppointment/functions/appointment-booking/src/bedrock_agent/schema/agent_schema.json"
-  etag         = filemd5("/Users/diegolima/Documents/projects/AIppointment/functions/appointment-booking/src/bedrock_agent/schema/agent_schema.json")
+  source       = var.schema_path
+  etag         = filemd5(var.schema_path)
   content_type = "application/json"
 }
 
