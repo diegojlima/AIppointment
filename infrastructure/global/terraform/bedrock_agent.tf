@@ -11,9 +11,9 @@ module "appointment_creator_lambda" {
   timeout       = 30
   memory_size   = 256
 
-  # Use source path approach instead
+  # Use relative path approach
   create_package = true
-  source_path    = "/Users/diegolima/Documents/projects/AIppointment/functions/appointment-booking/src/bedrock_agent/appointment_creator.py"
+  source_path    = "../../functions/appointment-booking/src/bedrock_agent/appointment_creator.py"
 
   environment_variables = {
     DYNAMODB_TABLE = aws_dynamodb_table.appointments.name
@@ -34,9 +34,9 @@ module "appointment_manager_lambda" {
   timeout       = 30
   memory_size   = 256
 
-  # Use source path approach instead
+  # Use relative path approach
   create_package = true
-  source_path    = "/Users/diegolima/Documents/projects/AIppointment/functions/appointment-booking/src/bedrock_agent/appointment_manager.py"
+  source_path    = "../../functions/appointment-booking/src/bedrock_agent/appointment_manager.py"
 
   environment_variables = {
     DYNAMODB_TABLE = aws_dynamodb_table.appointments.name
@@ -57,9 +57,9 @@ module "calendar_integrator_lambda" {
   timeout       = 30
   memory_size   = 256
 
-  # Use source path approach instead
+  # Use relative path approach
   create_package = true
-  source_path    = "/Users/diegolima/Documents/projects/AIppointment/functions/appointment-booking/src/bedrock_agent/calendar_integrator.py"
+  source_path    = "../../functions/appointment-booking/src/bedrock_agent/calendar_integrator.py"
 
   environment_variables = {
     DYNAMODB_TABLE             = aws_dynamodb_table.appointments.name
@@ -152,8 +152,8 @@ module "bedrock_agent" {
   project_name = local.project_name
   environment  = local.environment
 
-  # Path to the OpenAPI schema - use absolute path
-  schema_path = "/Users/diegolima/Documents/projects/AIppointment/functions/appointment-booking/src/bedrock_agent/schema/agent_schema.json"
+  # Path to the OpenAPI schema using relative path
+  schema_path = "../../functions/appointment-booking/src/bedrock_agent/schema/agent_schema.json"
 
   # Claude 3 Haiku model
   foundation_model = "anthropic.claude-3-haiku-20240307-v1:0"
