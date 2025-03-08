@@ -73,7 +73,10 @@ module "appointment_booking_lambda" {
   function_name = "${local.project_name}-booking"
   handler       = "main.lambda_handler"
   runtime       = "python3.12"
-  source_dir    = "../../../functions/appointment-booking/src"
+  
+  # Set up proper source path handling for terraform-aws-lambda module
+  create_package = true 
+  source_path    = "${path.root}/functions/appointment-booking/src"
 
   environment_variables = {
     DYNAMODB_TABLE = aws_dynamodb_table.appointments.name
