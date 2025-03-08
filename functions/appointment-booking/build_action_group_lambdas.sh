@@ -11,7 +11,7 @@ mkdir -p lambda_packages
 # Install dependencies in a temporary directory
 TEMP_DIR="lambda_packages/temp"
 mkdir -p $TEMP_DIR
-pip install -r requirements.txt -t $TEMP_DIR --upgrade
+python -m pip install -r requirements.txt -t $TEMP_DIR --upgrade --index-url https://pypi.org/simple/
 
 # Function to create action group lambda packages
 create_lambda_package() {
