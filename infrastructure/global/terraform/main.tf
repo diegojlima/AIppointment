@@ -5,10 +5,10 @@ provider "aws" {
 }
 
 resource "aws_dynamodb_table" "appointments" {
-  name           = "${local.project_name}-appointments"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "PhoneNumber"
-  range_key      = "CreatedAt"  # Changed from AppointmentDateTime to match Lambda function
+  name         = "${local.project_name}-appointments"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "PhoneNumber"
+  range_key    = "CreatedAt" # Changed from AppointmentDateTime to match Lambda function
 
   attribute {
     name = "PhoneNumber"
@@ -25,6 +25,7 @@ resource "aws_dynamodb_table" "appointments" {
     Project     = local.project_name
   }
 }
+
 resource "aws_dynamodb_table" "terraform_state_lock" {
   name           = "terraform-state-lock"
   read_capacity  = 1
@@ -69,11 +70,11 @@ resource "aws_apigatewayv2_stage" "appointment_api" {
 module "appointment_booking_lambda" {
   source = "../../modules/cloud_function"
 
-  function_name    = "${local.project_name}-booking"
-  handler          = "main.lambda_handler"
-  runtime          = "python3.12"
-  source_dir       = "../../../functions/appointment-booking/src"
-  
+  function_name = "${local.project_name}-booking"
+  handler       = "main.lambda_handler"
+  runtime       = "python3.12"
+  source_dir    = "../../../functions/appointment-booking/src"
+
   environment_variables = {
     DYNAMODB_TABLE = aws_dynamodb_table.appointments.name
   }
