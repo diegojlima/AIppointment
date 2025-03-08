@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - feat/use-terraform-aws-lambda-module  # Add your feature branch here
   pull_request:
     branches:
       - main
@@ -83,7 +84,7 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/use-terraform-aws-lambda-module')) ||
       (github.event_name == 'workflow_dispatch') ||
       (needs.validate.outputs.lambda_code_changed == 'true')
 
@@ -125,7 +126,7 @@ jobs:
     needs: [validate, build-lambdas]
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/use-terraform-aws-lambda-module')) ||
       (github.event_name == 'workflow_dispatch')
     environment: production  # Use environments for deployment approvals and secrets
 
@@ -176,7 +177,7 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/use-terraform-aws-lambda-module')) ||
       (github.event_name == 'workflow_dispatch')
 
     steps:
