@@ -14,11 +14,11 @@ module "lambda_function" {
   publish       = var.publish
 
   # Source path or existing package options
-  create_package          = var.create_package
-  local_existing_package  = var.lambda_zip_file
-  source_path             = var.source_path
-  artifacts_dir           = "${path.root}/.terraform/lambda_builds/"
-  
+  create_package         = var.create_package
+  local_existing_package = var.lambda_zip_file
+  source_path            = var.source_path
+  artifacts_dir          = "${path.root}/.terraform/lambda_builds/"
+
   # Environment variables
   environment_variables = var.environment_variables
 
@@ -73,7 +73,7 @@ module "lambda_function" {
 
 # Only create API Gateway integration if needed
 resource "aws_apigatewayv2_integration" "lambda_integration" {
-  count             = var.api_gateway_id != null && var.route_key != null ? 1 : 0
+  count              = var.api_gateway_id != null && var.route_key != null ? 1 : 0
   api_id             = var.api_gateway_id
   integration_type   = "AWS_PROXY"
   integration_uri    = module.lambda_function.lambda_function_invoke_arn

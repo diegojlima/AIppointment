@@ -3,8 +3,8 @@ environment = "staging"
 aws_region  = "us-west-2"
 
 # WhatsApp integration
-whatsapp_phone_number_id      = "your-whatsapp-phone-number-id"      # Replace with actual value in AWS Parameter Store
-whatsapp_webhook_verify_token = "staging-verification-token"         # Replace with actual value in AWS Parameter Store
+whatsapp_phone_number_id      = "your-whatsapp-phone-number-id" # Replace with actual value in AWS Parameter Store
+whatsapp_webhook_verify_token = "staging-verification-token"    # Replace with actual value in AWS Parameter Store
 
 # Bedrock Agent
 foundation_model_id = "anthropic.claude-3-haiku-20240307-v1:0"

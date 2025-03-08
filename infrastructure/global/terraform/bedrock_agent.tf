@@ -12,7 +12,7 @@ module "appointment_creator_lambda" {
   memory_size   = 256
 
   # Use the pre-built package approach with proper path handling
-  create_package = false
+  create_package  = false
   lambda_zip_file = "${path.root}/functions/appointment-booking/appointment_creator_lambda.zip"
 
   environment_variables = {
@@ -35,7 +35,7 @@ module "appointment_manager_lambda" {
   memory_size   = 256
 
   # Use the pre-built package approach with proper path handling
-  create_package = false
+  create_package  = false
   lambda_zip_file = "${path.root}/functions/appointment-booking/appointment_manager_lambda.zip"
 
   environment_variables = {
@@ -58,7 +58,7 @@ module "calendar_integrator_lambda" {
   memory_size   = 256
 
   # Use the pre-built package approach with proper path handling
-  create_package = false
+  create_package  = false
   lambda_zip_file = "${path.root}/functions/appointment-booking/calendar_integrator_lambda.zip"
 
   environment_variables = {
@@ -149,8 +149,8 @@ resource "aws_dynamodb_table" "conversation_messages" {
 module "bedrock_agent" {
   source = "../../modules/bedrock_agent"
 
-  project_name  = local.project_name
-  environment   = local.environment
+  project_name = local.project_name
+  environment  = local.environment
 
   # Path to the OpenAPI schema
   schema_path = "${path.root}/functions/appointment-booking/src/bedrock_agent/schema/agent_schema.json"
