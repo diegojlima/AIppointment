@@ -18,8 +18,8 @@ variable "schema_path" {
   default     = "../../../functions/appointment-booking/src/bedrock_agent/schema/agent_schema.json"
 }
 
-variable "foundation_model_id" {
-  description = "The ARN of the foundation model to use for the agent"
+variable "foundation_model" {
+  description = "The foundation model to use for the agent"
   type        = string
   default     = "anthropic.claude-3-haiku-20240307-v1:0"
 }

@@ -77,7 +77,7 @@ resource "aws_bedrockagent_agent" "appointment_agent" {
   agent_name              = "${var.project_name}-agent-${var.environment}"
   agent_resource_role_arn = aws_iam_role.bedrock_agent_role.arn
   
-  foundation_model = var.foundation_model_id
+  foundation_model = var.foundation_model
   instruction      = var.agent_instruction
   
   # Prepare the agent after creation
@@ -99,19 +99,17 @@ resource "aws_bedrockagent_agent_action_group" "appointment_creator" {
   description       = "Creates appointments and checks availability"
   
   # Lambda function executor
-  action_group_executor = jsonencode({
-    lambda = {
-      lambda_arn = var.appointment_creator_lambda_arn
-    }
-  })
+  action_group_executor {
+    lambda = var.appointment_creator_lambda_arn
+  }
   
   # API Schema from S3
-  api_schema = jsonencode({
-    s3 = {
+  api_schema {
+    s3 {
       s3_bucket_name = aws_s3_bucket.schema_bucket.bucket
       s3_object_key  = aws_s3_object.schema_object.key
     }
-  })
+  }
 }
 
 resource "aws_bedrockagent_agent_action_group" "appointment_manager" {
@@ -121,19 +119,17 @@ resource "aws_bedrockagent_agent_action_group" "appointment_manager" {
   description       = "Manages existing appointments (get, reschedule, cancel)"
   
   # Lambda function executor
-  action_group_executor = jsonencode({
-    lambda = {
-      lambda_arn = var.appointment_manager_lambda_arn
-    }
-  })
+  action_group_executor {
+    lambda = var.appointment_manager_lambda_arn
+  }
   
   # API Schema from S3
-  api_schema = jsonencode({
-    s3 = {
+  api_schema {
+    s3 {
       s3_bucket_name = aws_s3_bucket.schema_bucket.bucket
       s3_object_key  = aws_s3_object.schema_object.key
     }
-  })
+  }
 }
 
 resource "aws_bedrockagent_agent_action_group" "calendar_integrator" {
@@ -143,17 +139,15 @@ resource "aws_bedrockagent_agent_action_group" "calendar_integrator" {
   description       = "Integrates with external calendar systems"
   
   # Lambda function executor
-  action_group_executor = jsonencode({
-    lambda = {
-      lambda_arn = var.calendar_integrator_lambda_arn
-    }
-  })
+  action_group_executor {
+    lambda = var.calendar_integrator_lambda_arn
+  }
   
   # API Schema from S3
-  api_schema = jsonencode({
-    s3 = {
+  api_schema {
+    s3 {
       s3_bucket_name = aws_s3_bucket.schema_bucket.bucket
       s3_object_key  = aws_s3_object.schema_object.key
     }
-  })
+  }
 }

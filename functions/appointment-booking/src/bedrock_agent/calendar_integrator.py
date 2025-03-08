@@ -50,6 +50,7 @@ class CalendarIntegrator:
             calendar_provider: Optional calendar provider to use (GOOGLE or OUTLOOK)
         """
         self.secrets_manager = boto3.client('secretsmanager')
+        self.table_name = os.environ.get('DYNAMODB_TABLE', 'appointment-system-appointments')
         
         # Import calendar integration dynamically
         CalendarIntegration, CalendarProvider, available = import_calendar_integration()

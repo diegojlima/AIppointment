@@ -1,0 +1,189 @@
+name: Deploy AIppointment Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual triggering
+
+# Define environment variables used throughout the workflow
+env:
+  AWS_REGION: us-west-2  # Your preferred region where Bedrock is available
+  TERRAFORM_VERSION: 1.5.0
+  TF_WORKING_DIR: ./infrastructure/global/terraform
+
+permissions:
+  id-token: write   # Required for requesting the JWT
+  contents: read    # Required for checkout
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    outputs:
+      tf_code_changed: ${{ steps.changes.outputs.terraform }}
+      lambda_code_changed: ${{ steps.changes.outputs.lambda }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Check file changes
+        id: changes
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            terraform:
+              - 'infrastructure/**/*.tf'
+              - 'main.tf'
+              - 'variables.tf'
+            lambda:
+              - 'functions/appointment-booking/src/**/*.py'
+              - 'functions/appointment-booking/requirements.txt'
+
+      - name: Set up Python
+        if: steps.changes.outputs.lambda == 'true'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Lint Python code
+        if: steps.changes.outputs.lambda == 'true'
+        run: |
+          pip install flake8
+          flake8 functions/appointment-booking/src --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Set up Terraform
+        if: steps.changes.outputs.terraform == 'true'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Terraform Format Check
+        if: steps.changes.outputs.terraform == 'true'
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Initialize
+        if: steps.changes.outputs.terraform == 'true'
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        if: steps.changes.outputs.terraform == 'true'
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform validate
+
+  build-lambdas:
+    name: Build Lambda Packages
+    needs: validate
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch') ||
+      (needs.validate.outputs.lambda_code_changed == 'true')
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r functions/appointment-booking/requirements.txt
+
+      - name: Make pre_deploy.sh Executable
+        run: chmod +x ./pre_deploy.sh
+
+      - name: Make Lambda Build Script Executable
+        run: chmod +x ./functions/appointment-booking/build_action_group_lambdas.sh
+
+      - name: Run Pre-Deployment Script
+        run: ./pre_deploy.sh
+
+      - name: Upload Lambda Packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: lambda-packages
+          path: |
+            functions/appointment-booking/appointment_creator_lambda.zip
+            functions/appointment-booking/appointment_manager_lambda.zip
+            functions/appointment-booking/calendar_integrator_lambda.zip
+          retention-days: 1
+
+  deploy:
+    name: Deploy Infrastructure
+    needs: [validate, build-lambdas]
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch')
+    environment: production  # Use environments for deployment approvals and secrets
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Download Lambda Packages
+        uses: actions/download-artifact@v3
+        with:
+          name: lambda-packages
+          path: functions/appointment-booking/
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform plan -out=tfplan
+        
+      - name: Terraform Apply
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -auto-approve tfplan
+
+  verify:
+    name: Verify Deployment
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch')
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify Bedrock Agent
+        run: |
+          # Get the agent ID from terraform outputs
+          AGENT_ID=$(aws ssm get-parameter --name /aippointment/bedrock_agent_id --query "Parameter.Value" --output text)
+          
+          # Verify the agent exists
+          aws bedrock-agent get-agent --agent-id $AGENT_ID
+          
+          echo "Bedrock Agent verified successfully!"

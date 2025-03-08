@@ -10,6 +10,7 @@ This action group handles:
 import json
 import logging
 import boto3
+import os
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 from botocore.exceptions import ClientError
@@ -32,7 +33,7 @@ class AppointmentManager:
             calendar_integration: Optional calendar integration service
         """
         self.dynamodb = dynamodb_client or boto3.client('dynamodb')
-        self.table_name = 'Appointments'
+        self.table_name = os.environ.get('DYNAMODB_TABLE', 'appointment-system-appointments')
         
         # If calendar integration is provided, use it
         self.calendar_integration = calendar_integration
@@ -321,13 +322,21 @@ class AppointmentManager:
         logger.info(f"Sending reminder for appointment {appointment_id}")
         
         try:
-            # Get the appointment from DynamoDB
-            response = self.dynamodb.get_item(
+            # Get the appointment by scanning with filter
+            response = self.dynamodb.scan(
                 TableName=self.table_name,
-                Key={
-                    'id': {'S': appointment_id}
-                }
+                FilterExpression="appointmentId = :appointmentId",
+                ExpressionAttributeValues={
+                    ':appointmentId': {'S': appointment_id}
+                },
+                Limit=1
             )
+            
+            # Extract the item from scan results
+            if response.get('Items', []):
+                item = response['Items'][0]
+                response = {'Item': item}
+            
             
             # Check if the appointment exists
             if 'Item' not in response:

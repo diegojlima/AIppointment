@@ -85,18 +85,22 @@ The system follows a serverless architecture pattern built on AWS services:
 
 #### Manual Deployment
 
-1. Package the Lambda function:
+1. Run the pre-deployment script to build the Lambda function packages:
    ```
-   cd functions/appointment-booking
-   ./build_lambda.sh
+   ./pre_deploy.sh
    ```
 
 2. Deploy using Terraform:
    ```
-   cd infrastructure/global/terraform
    terraform init
    terraform apply
    ```
+
+#### Important Deployment Notes
+
+- **AWS Provider Version**: Ensure you're using AWS provider version 5.48.0 or newer for Bedrock Agent resources
+- **Lambda ZIP Files**: Action group Lambda ZIP files must be built before deployment using the pre-deployment script
+- **Bedrock Agent Support**: Verify that AWS Bedrock is available in your chosen region
 
 #### CI/CD Pipeline
 

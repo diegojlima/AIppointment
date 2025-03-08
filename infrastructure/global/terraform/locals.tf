@@ -2,5 +2,5 @@
 
 locals {
   project_name = "appointment-system"
-  environment  = "production"
+  environment  = "dev"
 }

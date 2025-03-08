@@ -9,6 +9,7 @@ This action group handles:
 import json
 import logging
 import boto3
+import os
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 from botocore.exceptions import ClientError
@@ -31,7 +32,7 @@ class AppointmentCreator:
             calendar_integration: Optional calendar integration service
         """
         self.dynamodb = dynamodb_client or boto3.client('dynamodb')
-        self.table_name = 'Appointments'
+        self.table_name = os.environ.get('DYNAMODB_TABLE', 'appointment-system-appointments')
         
         # If calendar integration is provided, use it
         self.calendar_integration = calendar_integration
@@ -151,15 +152,15 @@ class AppointmentCreator:
             
             # Create the appointment item
             appointment_item = {
-                'id': {'S': appointment_id},
-                'userId': {'S': user_id},
+                'PhoneNumber': {'S': user_id},
+                'CreatedAt': {'S': datetime.utcnow().isoformat()},
                 'date': {'S': date},
                 'startTime': {'S': time},
                 'endTime': {'S': end_time},
                 'purpose': {'S': purpose},
                 'durationMinutes': {'N': str(duration_minutes)},
                 'status': {'S': 'confirmed'},
-                'createdAt': {'S': datetime.utcnow().isoformat()}
+                'appointmentId': {'S': appointment_id}
             }
             
             # Add optional email
@@ -286,34 +287,37 @@ def lambda_handler(event, context):
     """
     logger.info(f"Received event: {json.dumps(event)}")
     
-    # Extract the action name and parameters
-    action_name = event.get('actionGroup', {}).get('actionName')
+    # Extract the action name and parameters - support different structures
+    action_group_info = event.get('actionGroup', {})
+    action_name = action_group_info.get('actionName') if 'actionName' in action_group_info else action_group_info.get('name', '')
     parameters = event.get('parameters', {})
     
     # Initialize the action group
     action_group = AppointmentCreator()
     
     # Route to the appropriate method
-    if action_name == 'check_availability':
+    if action_name == 'check_availability' or action_name == 'checkAvailability':
         date = parameters.get('date')
-        duration_minutes = int(parameters.get('duration_minutes', 60))
+        # Support both snake_case and camelCase parameter names
+        duration_minutes = int(parameters.get('duration_minutes', parameters.get('durationMinutes', 60)))
         
         return action_group.check_availability(date, duration_minutes)
     
-    elif action_name == 'create_appointment':
-        user_id = parameters.get('user_id')
+    elif action_name == 'create_appointment' or action_name == 'createAppointment':
+        # Support both snake_case and camelCase parameter names
+        user_id = parameters.get('user_id', parameters.get('userId'))
         date = parameters.get('date')
         time = parameters.get('time')
         purpose = parameters.get('purpose')
-        duration_minutes = int(parameters.get('duration_minutes', 60))
-        user_email = parameters.get('user_email')
+        duration_minutes = int(parameters.get('duration_minutes', parameters.get('durationMinutes', 60)))
+        user_email = parameters.get('user_email', parameters.get('userEmail'))
         
         return action_group.create_appointment(
             user_id, date, time, purpose, duration_minutes, user_email
         )
     
-    elif action_name == 'generate_confirmation':
-        appointment_id = parameters.get('appointment_id')
+    elif action_name == 'generate_confirmation' or action_name == 'generateConfirmation':
+        appointment_id = parameters.get('appointment_id', parameters.get('appointmentId'))
         
         return action_group.generate_confirmation(appointment_id)
     

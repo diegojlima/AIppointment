@@ -139,6 +139,28 @@ resource "aws_dynamodb_table" "conversation_messages" {
   }
 }
 
+# Lambda permissions for Bedrock Agent
+resource "aws_lambda_permission" "appointment_creator_permission" {
+  statement_id  = "AllowBedrockInvocation"
+  action        = "lambda:InvokeFunction"
+  function_name = module.appointment_creator_lambda.function_name
+  principal     = "bedrock.amazonaws.com"
+}
+
+resource "aws_lambda_permission" "appointment_manager_permission" {
+  statement_id  = "AllowBedrockInvocation"
+  action        = "lambda:InvokeFunction"
+  function_name = module.appointment_manager_lambda.function_name
+  principal     = "bedrock.amazonaws.com"
+}
+
+resource "aws_lambda_permission" "calendar_integrator_permission" {
+  statement_id  = "AllowBedrockInvocation"
+  action        = "lambda:InvokeFunction"
+  function_name = module.calendar_integrator_lambda.function_name
+  principal     = "bedrock.amazonaws.com"
+}
+
 # Bedrock Agent for appointment booking
 module "bedrock_agent" {
   source = "../../modules/bedrock_agent"
@@ -150,7 +172,7 @@ module "bedrock_agent" {
   schema_path   = "../../../functions/appointment-booking/src/bedrock_agent/schema/agent_schema.json"
   
   # Claude 3 Haiku model
-  foundation_model_id = "anthropic.claude-3-haiku-20240307-v1:0"
+  foundation_model = "anthropic.claude-3-haiku-20240307-v1:0"
   
   # Customize the agent instruction if needed
   agent_instruction = <<-EOT

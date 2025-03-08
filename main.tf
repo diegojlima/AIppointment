@@ -4,7 +4,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.0"
+      version = ">= 5.48.0"
     }
   }
 }
@@ -14,7 +14,7 @@ provider "aws" {
 }
 
 module "global_infra" {
-  source = "./global-infra/terraform"
+  source = "./infrastructure/global/terraform"
 }
 
 module "appointment_booking" {
