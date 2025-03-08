@@ -74,9 +74,9 @@ module "appointment_booking_lambda" {
   handler       = "main.lambda_handler"
   runtime       = "python3.12"
 
-  # Set up proper source path handling using relative path
-  create_package = true
-  source_path    = "../../functions/appointment-booking/src/main.py"
+  # Use pre-built package instead of source_path
+  create_package = false
+  lambda_zip_file = "${path.root}/functions/appointment-booking/appointment_booking_lambda.zip"
 
   environment_variables = {
     DYNAMODB_TABLE = aws_dynamodb_table.appointments.name
