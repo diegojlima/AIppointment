@@ -103,7 +103,12 @@ jobs:
       - name: Terraform Init
         run: |
           cd infrastructure/global/terraform
-          terraform init
+          terraform init \
+            -backend-config="bucket=delima-aippointment-terraform-state" \
+            -backend-config="key=global/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="encrypt=true" \
+            -backend-config="dynamodb_table=terraform-state-lock"
 
       - name: Terraform Validate
         run: |
