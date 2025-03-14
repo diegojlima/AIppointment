@@ -58,7 +58,38 @@ create_lambda_package() {
 }
 
 # Create individual lambda packages for each action group
-create_lambda_package "appointment_booking" "main" "appointment_booking_lambda.zip"
+# Create the appointment_booking lambda differently since main.py is in src/ not in bedrock_agent/
+echo "Creating Lambda package for appointment_booking..."
+package_dir="lambda_packages/appointment_booking"
+mkdir -p $package_dir
+
+# Copy all files from src
+cp -r $SRC_DIR/*.py $package_dir/ 2>/dev/null || true
+cp -r $SRC_DIR/config $package_dir/ 2>/dev/null || true
+cp -r $SRC_DIR/calendar_services $package_dir/ 2>/dev/null || true
+
+# Copy bedrock agent directory
+mkdir -p $package_dir/bedrock_agent
+cp $BEDROCK_AGENT_DIR/*.py $package_dir/bedrock_agent/ 2>/dev/null || true
+
+# Copy schema directory
+mkdir -p $package_dir/bedrock_agent/schema
+cp -r $BEDROCK_AGENT_DIR/schema/* $package_dir/bedrock_agent/schema/ 2>/dev/null || true
+
+# Copy dependencies
+cp -r $TEMP_DIR/* $package_dir/
+
+# Remove unnecessary files to reduce size
+find $package_dir -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+find $package_dir -type d -name "*.dist-info" -exec rm -rf {} + 2>/dev/null || true
+find $package_dir -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+
+# Create zip package
+cd $package_dir
+zip -r ../../appointment_booking_lambda.zip . -q
+cd ../../
+
+echo "Created appointment_booking_lambda.zip"
 create_lambda_package "appointment_creator" "appointment_creator" "appointment_creator_lambda.zip"
 create_lambda_package "appointment_manager" "appointment_manager" "appointment_manager_lambda.zip"
 create_lambda_package "calendar_integrator" "calendar_integrator" "calendar_integrator_lambda.zip"
