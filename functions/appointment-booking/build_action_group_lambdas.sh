@@ -11,7 +11,11 @@ mkdir -p lambda_packages
 # Install dependencies in a temporary directory
 TEMP_DIR="lambda_packages/temp"
 mkdir -p $TEMP_DIR
-python -m pip install -r requirements.txt -t $TEMP_DIR --upgrade --index-url https://pypi.org/simple/
+python3 -m pip install -r requirements.txt -t $TEMP_DIR --upgrade --index-url https://pypi.org/simple/
+
+# Define destination directory for ZIP files (Terraform expects them here)
+DEST_DIR="../../infrastructure/global/terraform/functions/appointment-booking"
+mkdir -p "$DEST_DIR"
 
 # Function to create action group lambda packages
 create_lambda_package() {
@@ -49,16 +53,18 @@ create_lambda_package() {
     find $package_dir -type d -name "*.dist-info" -exec rm -rf {} + 2>/dev/null || true
     find $package_dir -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
     
-    # Create zip package
+    # Create zip package and move it to the destination directory
     cd $package_dir
     zip -r ../../$output_zip . -q
     cd ../../
+    mv $output_zip "$DEST_DIR/"
     
-    echo "Created $output_zip"
+    echo "Created $DEST_DIR/$output_zip"
 }
 
 # Create individual lambda packages for each action group
-# Create the appointment_booking lambda differently since main.py is in src/ not in bedrock_agent/
+
+# Appointment booking package (special handling because main.py is in src/)
 echo "Creating Lambda package for appointment_booking..."
 package_dir="lambda_packages/appointment_booking"
 mkdir -p $package_dir
@@ -79,17 +85,19 @@ cp -r $BEDROCK_AGENT_DIR/schema/* $package_dir/bedrock_agent/schema/ 2>/dev/null
 # Copy dependencies
 cp -r $TEMP_DIR/* $package_dir/
 
-# Remove unnecessary files to reduce size
+# Remove unnecessary files
 find $package_dir -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 find $package_dir -type d -name "*.dist-info" -exec rm -rf {} + 2>/dev/null || true
 find $package_dir -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
 
-# Create zip package
+# Create appointment_booking zip package and move to destination
 cd $package_dir
 zip -r ../../appointment_booking_lambda.zip . -q
 cd ../../
+mv appointment_booking_lambda.zip "$DEST_DIR/"
+echo "Created $DEST_DIR/appointment_booking_lambda.zip"
 
-echo "Created appointment_booking_lambda.zip"
+# Create other action group packages
 create_lambda_package "appointment_creator" "appointment_creator" "appointment_creator_lambda.zip"
 create_lambda_package "appointment_manager" "appointment_manager" "appointment_manager_lambda.zip"
 create_lambda_package "calendar_integrator" "calendar_integrator" "calendar_integrator_lambda.zip"
@@ -97,4 +105,4 @@ create_lambda_package "calendar_integrator" "calendar_integrator" "calendar_inte
 # Clean up temporary directories
 rm -rf lambda_packages
 
-echo "Lambda packages created successfully!"
+echo "Lambda packages created successfully in $DEST_DIR!"
