@@ -74,6 +74,10 @@ module "lambda_function" {
       source_arn = "${var.api_gateway_execution_arn}/*/*"
     }
   } : {}
+  
+  # Disable features that cause for_each issues in the Lambda module
+  create_current_version_allowed_triggers     = false
+  create_unqualified_alias_allowed_triggers   = false
 
   tags = {
     Environment = "production"

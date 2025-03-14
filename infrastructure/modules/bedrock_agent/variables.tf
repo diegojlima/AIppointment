@@ -12,11 +12,7 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "schema_path" {
-  description = "The path to the OpenAPI schema file"
-  type        = string
-  default     = "../../../functions/appointment-booking/src/bedrock_agent/schema/agent_schema.json"
-}
+# schema_path variable removed as we're using a local file in the module
 
 variable "foundation_model" {
   description = "The foundation model to use for the agent"

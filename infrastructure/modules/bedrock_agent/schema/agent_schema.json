@@ -1,0 +1,498 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "AIppointment API",
+    "version": "1.0.0",
+    "description": "API for the AIppointment system, enabling appointment booking and management via WhatsApp"
+  },
+  "paths": {
+    "/appointments": {
+      "get": {
+        "summary": "Get appointments",
+        "operationId": "getAppointments",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "User ID (typically phone number)"
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" },
+            "description": "Start date for filtering (YYYY-MM-DD)"
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" },
+            "description": "End date for filtering (YYYY-MM-DD)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of appointments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "userId": { "type": "string" },
+                    "appointments": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Appointment" }
+                    },
+                    "count": { "type": "integer" },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create appointment",
+        "operationId": "createAppointment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AppointmentRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Appointment created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AppointmentResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/availability": {
+      "get": {
+        "summary": "Check availability",
+        "operationId": "checkAvailability",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "date" },
+            "description": "Date to check (YYYY-MM-DD)"
+          },
+          {
+            "name": "durationMinutes",
+            "in": "query",
+            "schema": { "type": "integer", "default": 60 },
+            "description": "Duration in minutes"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available time slots",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "date": { "type": "string", "format": "date" },
+                    "availableSlots": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/TimeSlot" }
+                    },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/{appointmentId}": {
+      "get": {
+        "summary": "Get appointment by ID",
+        "operationId": "getAppointmentById",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Appointment ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appointment details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Appointment" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Reschedule appointment",
+        "operationId": "rescheduleAppointment",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Appointment ID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "newDate": { "type": "string", "format": "date" },
+                  "newTime": { "type": "string", "format": "time" }
+                },
+                "required": ["newDate", "newTime"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Appointment rescheduled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "appointmentId": { "type": "string" },
+                    "oldDate": { "type": "string", "format": "date" },
+                    "oldTime": { "type": "string", "format": "time" },
+                    "newDate": { "type": "string", "format": "date" },
+                    "newTime": { "type": "string", "format": "time" },
+                    "updatedAppointment": { "$ref": "#/components/schemas/Appointment" },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Cancel appointment",
+        "operationId": "cancelAppointment",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Appointment ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appointment cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "appointmentId": { "type": "string" },
+                    "date": { "type": "string", "format": "date" },
+                    "time": { "type": "string", "format": "time" },
+                    "status": { "type": "string", "enum": ["cancelled"] },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/{appointmentId}/reminder": {
+      "post": {
+        "summary": "Send appointment reminder",
+        "operationId": "sendAppointmentReminder",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Appointment ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reminder sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "appointmentId": { "type": "string" },
+                    "userId": { "type": "string" },
+                    "reminderMessage": { "type": "string" },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/{appointmentId}/confirmation": {
+      "post": {
+        "summary": "Generate appointment confirmation",
+        "operationId": "generateConfirmation",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Appointment ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Confirmation generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "appointmentId": { "type": "string" },
+                    "confirmationMessage": { "type": "string" },
+                    "appointmentDetails": { "$ref": "#/components/schemas/Appointment" },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calendar/availability": {
+      "get": {
+        "summary": "Check calendar availability",
+        "operationId": "checkCalendarAvailability",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "date" },
+            "description": "Date to check (YYYY-MM-DD)"
+          },
+          {
+            "name": "startTime",
+            "in": "query",
+            "schema": { "type": "string", "format": "time", "default": "09:00" },
+            "description": "Start time (HH:MM)"
+          },
+          {
+            "name": "endTime",
+            "in": "query",
+            "schema": { "type": "string", "format": "time", "default": "17:00" },
+            "description": "End time (HH:MM)"
+          },
+          {
+            "name": "calendarProvider",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["GOOGLE", "OUTLOOK"] },
+            "description": "Calendar provider"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available time slots",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "date": { "type": "string", "format": "date" },
+                    "availableSlots": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "startTime": { "type": "string", "format": "time" },
+                          "endTime": { "type": "string", "format": "time" },
+                          "duration": { "type": "integer" }
+                        }
+                      }
+                    },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calendar/next-available": {
+      "get": {
+        "summary": "Get next available time slot",
+        "operationId": "getNextAvailableSlot",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" },
+            "description": "Start date (YYYY-MM-DD, defaults to today)"
+          },
+          {
+            "name": "minDurationMinutes",
+            "in": "query",
+            "schema": { "type": "integer", "default": 60 },
+            "description": "Minimum duration in minutes"
+          },
+          {
+            "name": "calendarProvider",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["GOOGLE", "OUTLOOK"] },
+            "description": "Calendar provider"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Next available time slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "date": { "type": "string", "format": "date" },
+                    "startTime": { "type": "string", "format": "time" },
+                    "endTime": { "type": "string", "format": "time" },
+                    "duration": { "type": "integer" },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calendar/sync": {
+      "post": {
+        "summary": "Sync appointment with calendar",
+        "operationId": "syncCalendarAppointment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "appointmentId": { "type": "string" },
+                  "summary": { "type": "string" },
+                  "date": { "type": "string", "format": "date" },
+                  "startTime": { "type": "string", "format": "time" },
+                  "durationMinutes": { "type": "integer", "default": 60 },
+                  "attendeeEmail": { "type": "string", "format": "email" },
+                  "calendarProvider": { "type": "string", "enum": ["GOOGLE", "OUTLOOK"] }
+                },
+                "required": ["appointmentId", "summary", "date", "startTime"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Appointment synced with calendar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "appointmentId": { "type": "string" },
+                    "calendarEventId": { "type": "string" },
+                    "calendarLink": { "type": "string" },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Appointment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "startTime": { "type": "string", "format": "time" },
+          "endTime": { "type": "string", "format": "time" },
+          "purpose": { "type": "string" },
+          "status": { 
+            "type": "string",
+            "enum": ["confirmed", "pending", "cancelled"]
+          },
+          "userEmail": { "type": "string", "format": "email" },
+          "calendarEventId": { "type": "string" },
+          "calendarLink": { "type": "string" },
+          "reminderSent": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AppointmentRequest": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "time": { "type": "string", "format": "time" },
+          "purpose": { "type": "string" },
+          "durationMinutes": { "type": "integer", "default": 60 },
+          "userEmail": { "type": "string", "format": "email" }
+        },
+        "required": ["userId", "date", "time", "purpose"]
+      },
+      "AppointmentResponse": {
+        "type": "object",
+        "properties": {
+          "appointmentId": { "type": "string" },
+          "userId": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "startTime": { "type": "string", "format": "time" },
+          "endTime": { "type": "string", "format": "time" },
+          "purpose": { "type": "string" },
+          "status": { "type": "string" },
+          "calendarLink": { "type": "string" },
+          "success": { "type": "boolean" }
+        }
+      },
+      "TimeSlot": {
+        "type": "object",
+        "properties": {
+          "startTime": { "type": "string", "format": "time" },
+          "endTime": { "type": "string", "format": "time" },
+          "available": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

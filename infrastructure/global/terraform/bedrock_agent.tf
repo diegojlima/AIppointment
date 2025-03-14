@@ -152,8 +152,7 @@ module "bedrock_agent" {
   project_name = local.project_name
   environment  = local.environment
 
-  # Path to the OpenAPI schema using absolute path
-  schema_path = "${path.root}/functions/appointment-booking/src/bedrock_agent/schema/agent_schema.json"
+  # schema_path parameter is no longer needed as we're using a local file
 
   # Claude 3 Haiku model
   foundation_model = "anthropic.claude-3-haiku-20240307-v1:0"
