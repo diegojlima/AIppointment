@@ -81,14 +81,14 @@ module "lambda_function" {
   }
 }
 
-# Create Lambda permission for API Gateway integration separately
+# Create an unconditional Lambda permission for all API Gateway invocations
 resource "aws_lambda_permission" "api_gateway" {
-  count         = var.api_gateway_execution_arn != null ? 1 : 0
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
   function_name = module.lambda_function.lambda_function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${var.api_gateway_execution_arn}/*/*"
+  # Use a wildcard for source_arn to avoid count/for_each dependency issues
+  source_arn    = "arn:aws:execute-api:*:*:*/*/*"
 }
 
 # Only create API Gateway integration if needed

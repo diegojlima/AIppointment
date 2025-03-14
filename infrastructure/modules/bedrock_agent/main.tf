@@ -10,6 +10,7 @@ resource "aws_s3_bucket" "schema_bucket" {
 }
 
 # Use a local schema file to avoid path resolution issues in CI/CD
+# Schema file is embedded in the module to avoid file path dependencies
 resource "aws_s3_object" "schema_object" {
   bucket       = aws_s3_bucket.schema_bucket.id
   key          = "agent_schema.json"
