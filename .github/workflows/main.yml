@@ -164,7 +164,18 @@ jobs:
 
       - name: Terraform Init
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="bucket=delima-aippointment-terraform-state" \
+            -backend-config="key=terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=terraform-state-lock"
+
+      - name: Import Existing Resources
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          chmod +x ./handle_existing_resources.sh
+          ./handle_existing_resources.sh || true
 
       - name: Terraform Plan
         working-directory: ${{ env.TF_WORKING_DIR }}
