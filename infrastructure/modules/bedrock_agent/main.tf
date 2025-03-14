@@ -1,7 +1,7 @@
 # infrastructure/modules/bedrock_agent/main.tf
 
 resource "aws_s3_bucket" "schema_bucket" {
-  bucket = "${var.project_name}-bedrock-schema-${var.environment}"
+  bucket = "dijoseh-${var.project_name}-bedrock-schema-${var.environment}"
 
   tags = {
     Name        = "${var.project_name}-bedrock-schema"

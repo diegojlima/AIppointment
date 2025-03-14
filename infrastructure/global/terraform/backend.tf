@@ -6,7 +6,7 @@ terraform {
 
   # Original S3 backend (commented out until permissions are fixed)
   # backend "s3" {
-  #   bucket         = "delima-aippointment-terraform-state"
+  #   bucket         = "dijoseh-aippointment-terraform-state"
   #   key            = "terraform.tfstate"
   #   region         = "us-west-2" # Use your preferred region
   #   encrypt        = true
