@@ -67,13 +67,9 @@ module "lambda_function" {
     }
   }
 
-  # Lambda permissions and API Gateway integration
-  allowed_triggers = var.api_gateway_execution_arn != null ? {
-    api_gateway = {
-      service    = "apigateway"
-      source_arn = "${var.api_gateway_execution_arn}/*/*"
-    }
-  } : {}
+  # The allowed_triggers variable is causing for_each issues, so we're using an empty map
+  # and setting up the permissions separately
+  allowed_triggers = {}
   
   # Disable features that cause for_each issues in the Lambda module
   create_current_version_allowed_triggers     = false
@@ -83,6 +79,16 @@ module "lambda_function" {
     Environment = "production"
     Terraform   = "true"
   }
+}
+
+# Create Lambda permission for API Gateway integration separately
+resource "aws_lambda_permission" "api_gateway" {
+  count         = var.api_gateway_execution_arn != null ? 1 : 0
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = module.lambda_function.lambda_function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${var.api_gateway_execution_arn}/*/*"
 }
 
 # Only create API Gateway integration if needed
