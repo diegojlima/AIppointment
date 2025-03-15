@@ -76,7 +76,7 @@ module "appointment_booking_lambda" {
 
   # Use pre-built package instead of source_path
   create_package  = false
-  lambda_zip_file = "${path.root}/../../../functions/appointment-booking/appointment_booking_lambda.zip"
+  lambda_zip_file = "${path.root}/functions/appointment-booking/appointment_booking_lambda.zip"
 
   environment_variables = {
     DYNAMODB_TABLE = aws_dynamodb_table.appointments.name

@@ -29,3 +29,18 @@ output "agent_role_name" {
   description = "The name of the IAM role for the Bedrock Agent"
   value       = aws_iam_role.bedrock_agent_role.name
 }
+
+output "appointment_creator_action_group_id" {
+  description = "The ID of the AppointmentCreator action group"
+  value       = aws_bedrockagent_agent_action_group.appointment_creator.id
+}
+
+output "appointment_manager_action_group_id" {
+  description = "The ID of the AppointmentManager action group"
+  value       = aws_bedrockagent_agent_action_group.appointment_manager.id
+}
+
+output "calendar_integrator_action_group_id" {
+  description = "The ID of the CalendarIntegrator action group"
+  value       = aws_bedrockagent_agent_action_group.calendar_integrator.id
+}

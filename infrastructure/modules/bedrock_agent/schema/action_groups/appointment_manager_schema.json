@@ -1,0 +1,226 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Appointment Manager API",
+    "version": "1.0.0",
+    "description": "API for managing existing appointments (viewing, rescheduling, cancelling, reminders)"
+  },
+  "paths": {
+    "/appointments": {
+      "get": {
+        "summary": "Get appointments",
+        "operationId": "getAppointments",
+        "description": "Gets all appointments for a user with optional date filtering. Use this when a user wants to see their appointments.",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "User ID (typically phone number)"
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" },
+            "description": "Start date for filtering (YYYY-MM-DD)"
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" },
+            "description": "End date for filtering (YYYY-MM-DD)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of appointments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "userId": { "type": "string" },
+                    "appointments": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Appointment" }
+                    },
+                    "count": { "type": "integer" },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/{appointmentId}": {
+      "get": {
+        "summary": "Get appointment by ID",
+        "operationId": "getAppointmentById",
+        "description": "Gets details for a specific appointment by ID. Use this when a user wants to check details of a specific appointment.",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Appointment ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appointment details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Appointment" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Reschedule appointment",
+        "operationId": "rescheduleAppointment",
+        "description": "Reschedules an existing appointment to a new date and time. Use this when a user wants to change an appointment time.",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Appointment ID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "newDate": { "type": "string", "format": "date" },
+                  "newTime": { "type": "string", "format": "time" }
+                },
+                "required": ["newDate", "newTime"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Appointment rescheduled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "appointmentId": { "type": "string" },
+                    "oldDate": { "type": "string", "format": "date" },
+                    "oldTime": { "type": "string", "format": "time" },
+                    "newDate": { "type": "string", "format": "date" },
+                    "newTime": { "type": "string", "format": "time" },
+                    "updatedAppointment": { "$ref": "#/components/schemas/Appointment" },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Cancel appointment",
+        "operationId": "cancelAppointment",
+        "description": "Cancels an existing appointment. Use this when a user wants to cancel their appointment.",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Appointment ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appointment cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "appointmentId": { "type": "string" },
+                    "date": { "type": "string", "format": "date" },
+                    "time": { "type": "string", "format": "time" },
+                    "status": { "type": "string", "enum": ["cancelled"] },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/{appointmentId}/reminder": {
+      "post": {
+        "summary": "Send appointment reminder",
+        "operationId": "sendAppointmentReminder",
+        "description": "Sends a reminder message for an upcoming appointment. Use this when a user should be reminded of their appointment.",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Appointment ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reminder sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "appointmentId": { "type": "string" },
+                    "userId": { "type": "string" },
+                    "reminderMessage": { "type": "string" },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Appointment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "startTime": { "type": "string", "format": "time" },
+          "endTime": { "type": "string", "format": "time" },
+          "purpose": { "type": "string" },
+          "status": { 
+            "type": "string",
+            "enum": ["confirmed", "pending", "cancelled"]
+          },
+          "userEmail": { "type": "string", "format": "email" },
+          "calendarEventId": { "type": "string" },
+          "calendarLink": { "type": "string" },
+          "reminderSent": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}

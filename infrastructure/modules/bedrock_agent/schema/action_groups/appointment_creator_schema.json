@@ -1,0 +1,169 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Appointment Creator API",
+    "version": "1.0.0",
+    "description": "API for creating new appointments and checking availability"
+  },
+  "paths": {
+    "/appointments": {
+      "post": {
+        "summary": "Create appointment",
+        "operationId": "createAppointment",
+        "description": "Creates a new appointment with the specified details. Use this when a user wants to book a new appointment.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AppointmentRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Appointment created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AppointmentResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/availability": {
+      "get": {
+        "summary": "Check availability",
+        "operationId": "checkAvailability",
+        "description": "Checks available time slots for appointments on a specific date. Use this when a user wants to know when they can book an appointment.",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "date" },
+            "description": "Date to check (YYYY-MM-DD)"
+          },
+          {
+            "name": "durationMinutes",
+            "in": "query",
+            "schema": { "type": "integer", "default": 60 },
+            "description": "Duration in minutes"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available time slots",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "date": { "type": "string", "format": "date" },
+                    "availableSlots": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/TimeSlot" }
+                    },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/{appointmentId}/confirmation": {
+      "post": {
+        "summary": "Generate appointment confirmation",
+        "operationId": "generateConfirmation",
+        "description": "Generates a confirmation message for an appointment. Use this to create a confirmation text for a newly booked appointment.",
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Appointment ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Confirmation generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "appointmentId": { "type": "string" },
+                    "confirmationMessage": { "type": "string" },
+                    "appointmentDetails": { "$ref": "#/components/schemas/Appointment" },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Appointment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "userId": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "startTime": { "type": "string", "format": "time" },
+          "endTime": { "type": "string", "format": "time" },
+          "purpose": { "type": "string" },
+          "status": { 
+            "type": "string",
+            "enum": ["confirmed", "pending", "cancelled"]
+          },
+          "userEmail": { "type": "string", "format": "email" },
+          "calendarEventId": { "type": "string" },
+          "calendarLink": { "type": "string" },
+          "reminderSent": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AppointmentRequest": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "time": { "type": "string", "format": "time" },
+          "purpose": { "type": "string" },
+          "durationMinutes": { "type": "integer", "default": 60 },
+          "userEmail": { "type": "string", "format": "email" }
+        },
+        "required": ["userId", "date", "time", "purpose"]
+      },
+      "AppointmentResponse": {
+        "type": "object",
+        "properties": {
+          "appointmentId": { "type": "string" },
+          "userId": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "startTime": { "type": "string", "format": "time" },
+          "endTime": { "type": "string", "format": "time" },
+          "purpose": { "type": "string" },
+          "status": { "type": "string" },
+          "calendarLink": { "type": "string" },
+          "success": { "type": "boolean" }
+        }
+      },
+      "TimeSlot": {
+        "type": "object",
+        "properties": {
+          "startTime": { "type": "string", "format": "time" },
+          "endTime": { "type": "string", "format": "time" },
+          "available": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

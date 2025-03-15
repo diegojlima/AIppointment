@@ -1,0 +1,161 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Calendar Integrator API",
+    "version": "1.0.0",
+    "description": "API for integrating with external calendar systems (Google, Outlook)"
+  },
+  "paths": {
+    "/calendar/availability": {
+      "get": {
+        "summary": "Check calendar availability",
+        "operationId": "checkCalendarAvailability",
+        "description": "Checks the calendar availability for a specific date. Use this to find free time slots directly from the calendar system.",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "date" },
+            "description": "Date to check (YYYY-MM-DD)"
+          },
+          {
+            "name": "startTime",
+            "in": "query",
+            "schema": { "type": "string", "format": "time", "default": "09:00" },
+            "description": "Start time (HH:MM)"
+          },
+          {
+            "name": "endTime",
+            "in": "query",
+            "schema": { "type": "string", "format": "time", "default": "17:00" },
+            "description": "End time (HH:MM)"
+          },
+          {
+            "name": "calendarProvider",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["GOOGLE", "OUTLOOK"] },
+            "description": "Calendar provider"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available time slots",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "date": { "type": "string", "format": "date" },
+                    "availableSlots": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "startTime": { "type": "string", "format": "time" },
+                          "endTime": { "type": "string", "format": "time" },
+                          "duration": { "type": "integer" }
+                        }
+                      }
+                    },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calendar/next-available": {
+      "get": {
+        "summary": "Get next available time slot",
+        "operationId": "getNextAvailableSlot",
+        "description": "Finds the next available time slot in the calendar. Use this when a user wants to find the earliest available appointment time.",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" },
+            "description": "Start date (YYYY-MM-DD, defaults to today)"
+          },
+          {
+            "name": "minDurationMinutes",
+            "in": "query",
+            "schema": { "type": "integer", "default": 60 },
+            "description": "Minimum duration in minutes"
+          },
+          {
+            "name": "calendarProvider",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["GOOGLE", "OUTLOOK"] },
+            "description": "Calendar provider"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Next available time slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "date": { "type": "string", "format": "date" },
+                    "startTime": { "type": "string", "format": "time" },
+                    "endTime": { "type": "string", "format": "time" },
+                    "duration": { "type": "integer" },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calendar/sync": {
+      "post": {
+        "summary": "Sync appointment with calendar",
+        "operationId": "syncCalendarAppointment",
+        "description": "Synchronizes an appointment with an external calendar system. Use this to add an appointment to the calendar after booking.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "appointmentId": { "type": "string" },
+                  "summary": { "type": "string" },
+                  "date": { "type": "string", "format": "date" },
+                  "startTime": { "type": "string", "format": "time" },
+                  "durationMinutes": { "type": "integer", "default": 60 },
+                  "attendeeEmail": { "type": "string", "format": "email" },
+                  "calendarProvider": { "type": "string", "enum": ["GOOGLE", "OUTLOOK"] }
+                },
+                "required": ["appointmentId", "summary", "date", "startTime"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Appointment synced with calendar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "appointmentId": { "type": "string" },
+                    "calendarEventId": { "type": "string" },
+                    "calendarLink": { "type": "string" },
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

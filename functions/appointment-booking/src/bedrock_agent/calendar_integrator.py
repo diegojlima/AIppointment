@@ -13,6 +13,12 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List
 import os
 
+# Add parent directory to Python path to fix imports
+import sys
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
 # Import calendar integration
 import importlib
 from typing import Optional, Type
@@ -49,7 +55,6 @@ class CalendarIntegrator:
         Args:
             calendar_provider: Optional calendar provider to use (GOOGLE or OUTLOOK)
         """
-        self.secrets_manager = boto3.client('secretsmanager')
         self.table_name = os.environ.get('DYNAMODB_TABLE', 'appointment-system-appointments')
         
         # Import calendar integration dynamically
@@ -279,51 +284,190 @@ def lambda_handler(event, context):
     """
     Lambda handler for the CalendarIntegrator action group
     
+    Note: This Lambda expects the following environment variables to be set:
+    - GOOGLE_CALENDAR_TYPE=service_account
+    - GOOGLE_CALENDAR_PROJECT_ID=pede-ai-core
+    - GOOGLE_CALENDAR_PRIVATE_KEY_ID=e317959746d8b6f2b5328e147d9a87e97a9af31d
+    - GOOGLE_CALENDAR_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\nMIIE...==\n-----END PRIVATE KEY-----\n
+    - GOOGLE_CALENDAR_CLIENT_EMAIL=aippointment-calendar@pede-ai-core.iam.gserviceaccount.com
+    - GOOGLE_CALENDAR_CLIENT_ID=114676092833790726786
+    - Additional Google Calendar environment variables as needed
+    
     Args:
         event: The Lambda event
         context: The Lambda context
         
     Returns:
-        Dictionary with the action response
+        Dictionary with the action response formatted for AWS Bedrock Agents
     """
-    logger.info(f"Received event: {json.dumps(event)}")
-    
-    # Extract the action name and parameters
-    action_name = event.get('actionGroup', {}).get('actionName')
-    parameters = event.get('parameters', {})
-    
-    # Initialize the action group
-    calendar_provider = parameters.get('calendar_provider')
-    action_group = CalendarIntegrator(calendar_provider)
-    
-    # Route to the appropriate method
-    if action_name == 'check_availability':
-        date = parameters.get('date')
-        start_time = parameters.get('start_time', "09:00")
-        end_time = parameters.get('end_time', "17:00")
+    try:
+        # First, let's log the raw event for debugging
+        logger.info(f"Raw event type: {type(event)}, content: {event}")
         
-        return action_group.check_availability(date, start_time, end_time)
-    
-    elif action_name == 'sync_appointment':
-        appointment_id = parameters.get('appointment_id')
-        summary = parameters.get('summary')
-        date = parameters.get('date')
-        start_time = parameters.get('start_time')
-        duration_minutes = int(parameters.get('duration_minutes', 60))
-        attendee_email = parameters.get('attendee_email')
+        # *** Super defensive approach - always stringify and then parse the event ***
+        try:
+            # Convert the event to a string then back to a dictionary
+            # This ensures consistent handling regardless of how Lambda provides it
+            if isinstance(event, dict):
+                event_str = json.dumps(event)
+            else:
+                event_str = str(event)
+                
+            # If event_str isn't already valid JSON (i.e., with quotes and formatting)
+            # this will try to fix it by interpreting it as a Python literal
+            if not event_str.startswith('{') and not event_str.startswith('['):
+                import ast
+                try:
+                    # Try to convert Python literal to dict
+                    event_dict = ast.literal_eval(event_str)
+                    if isinstance(event_dict, dict):
+                        event_str = json.dumps(event_dict)
+                except (SyntaxError, ValueError):
+                    # If that fails, wrap it as a simple string payload
+                    event_str = json.dumps({"raw_content": event_str})
+            
+            # Now parse it back to a dictionary
+            event = json.loads(event_str)
+            logger.info(f"Processed event: {json.dumps(event)}")
+            
+        except (TypeError, json.JSONDecodeError) as e:
+            logger.error(f"Failed to process event format: {str(e)}")
+            return format_bedrock_response({
+                "error": f"Invalid event format: {str(e)}"
+            })
         
-        return action_group.sync_appointment(
-            appointment_id, summary, date, start_time, duration_minutes, attendee_email
-        )
-    
-    elif action_name == 'get_next_available_slot':
-        date = parameters.get('date')
-        min_duration_minutes = int(parameters.get('min_duration_minutes', 60))
+        # Extract the action name from apiPath and actionGroup
+        try:
+            action_group_name = event.get('actionGroup')
+            if not action_group_name:
+                return format_bedrock_response({"error": "Missing actionGroup in event"})
+                
+            api_path = event.get('apiPath')
+            if not api_path:
+                return format_bedrock_response({"error": "Missing apiPath in event"})
+            
+            # Map API paths to action names
+            api_path_to_action = {
+                "/calendar/availability": "checkAvailability",
+                "/appointment/sync": "syncAppointment",
+                "/calendar/next-slot": "getNextAvailableSlot"
+            }
+            
+            action_name = api_path_to_action.get(api_path)
+            if not action_name:
+                return format_bedrock_response({"error": f"Unknown API path: {api_path}"})
+                
+        except AttributeError as e:
+            logger.error(f"Event structure error: {str(e)}")
+            return format_bedrock_response({"error": "Invalid event format: event structure error"})
         
-        return action_group.get_next_available_slot(date, min_duration_minutes)
+        # Process parameters from the parameters list format
+        parameters = {}
+        params_list = event.get('parameters', [])
+        
+        # Process parameters from list format (which is what Bedrock Agents uses)
+        for param in params_list:
+            if isinstance(param, dict) and 'name' in param and 'value' in param:
+                parameters[param['name']] = param['value']
+        
+        logger.info(f"Processed parameters: {parameters}")
+        
+        # Initialize the action group
+        calendar_provider = parameters.get('calendar_provider')
+        action_group_instance = CalendarIntegrator(calendar_provider)
+        
+        # Route to the appropriate method
+        if action_name == 'checkAvailability':
+            date = parameters.get('date')
+            if not date:
+                return format_bedrock_response({
+                    "error": "Missing required parameter: date"
+                })
+                
+            # Check for camelCase and snake_case parameter names
+            start_time = parameters.get('startTime') or parameters.get('start_time', "09:00")
+            end_time = parameters.get('endTime') or parameters.get('end_time', "17:00")
+            
+            result = action_group_instance.check_availability(date, start_time, end_time)
+            return format_bedrock_response(result)
+        
+        elif action_name == 'syncAppointment':
+            # Check for camelCase and snake_case parameter names
+            appointment_id = parameters.get('appointmentId') or parameters.get('appointment_id')
+            if not appointment_id:
+                return format_bedrock_response({
+                    "error": "Missing required parameter: appointmentId"
+                })
+                
+            summary = parameters.get('summary')
+            if not summary:
+                return format_bedrock_response({
+                    "error": "Missing required parameter: summary"
+                })
+                
+            date = parameters.get('date')
+            if not date:
+                return format_bedrock_response({
+                    "error": "Missing required parameter: date"
+                })
+                
+            start_time = parameters.get('startTime') or parameters.get('start_time')
+            if not start_time:
+                return format_bedrock_response({
+                    "error": "Missing required parameter: startTime"
+                })
+                
+            # These parameters are optional or have defaults
+            try:
+                duration_minutes = int(parameters.get('durationMinutes') or parameters.get('duration_minutes', 60))
+            except (ValueError, TypeError):
+                duration_minutes = 60
+                
+            attendee_email = parameters.get('attendeeEmail') or parameters.get('attendee_email')
+            
+            result = action_group_instance.sync_appointment(
+                appointment_id, summary, date, start_time, duration_minutes, attendee_email
+            )
+            return format_bedrock_response(result)
+            
+        elif action_name == 'getNextAvailableSlot':
+            # Check for camelCase and snake_case parameter names
+            date = parameters.get('date')
+            
+            # Default to 60 minutes, handle conversion errors
+            try:
+                min_duration_minutes = int(parameters.get('minDurationMinutes') or parameters.get('min_duration_minutes', 60))
+            except (ValueError, TypeError):
+                min_duration_minutes = 60
+            
+            result = action_group_instance.get_next_available_slot(date, min_duration_minutes)
+            return format_bedrock_response(result)
+        
+        else:
+            return format_bedrock_response({
+                "error": f"Unknown action: {action_name}"
+            })
+            
+    except Exception as e:
+        logger.error(f"Unexpected error in lambda_handler: {str(e)}", exc_info=True)
+        return format_bedrock_response({
+            "error": f"Internal server error: {str(e)}"
+        })
+
+def format_bedrock_response(result):
+    """
+    Format the response for AWS Bedrock Agents
     
-    else:
-        return {
-            "success": False,
-            "error": f"Unknown action: {action_name}"
+    Args:
+        result: The result dict from the action
+        
+    Returns:
+        Properly formatted response for Bedrock Agents
+    """
+    return {
+        "messageVersion": "1.0",
+        "response": {
+            "actionGroup": "CalendarIntegrator",
+            "output": result
         }
+    }

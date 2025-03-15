@@ -11,7 +11,12 @@ mkdir -p lambda_packages
 # Install dependencies in a temporary directory
 TEMP_DIR="lambda_packages/temp"
 mkdir -p $TEMP_DIR
-python3 -m pip install -r requirements.txt -t $TEMP_DIR --upgrade --index-url https://pypi.org/simple/
+
+# Use environment variables to override pip configuration just for this command
+echo "Installing dependencies directly from PyPI, bypassing CodeArtifact..."
+PIP_INDEX_URL=https://pypi.org/simple/ \
+PIP_TRUSTED_HOST="pypi.org files.pythonhosted.org" \
+python3 -m pip install -r requirements.txt -t $TEMP_DIR --upgrade --no-cache-dir --index-url=https://pypi.org/simple/ --trusted-host=pypi.org --trusted-host=files.pythonhosted.org
 
 # Define destination directory for ZIP files (Terraform expects them here)
 DEST_DIR="../../infrastructure/global/terraform/functions/appointment-booking"
