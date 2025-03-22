@@ -153,7 +153,7 @@ class GoogleCalendarService(CalendarServiceInterface):
                 logger.error("Could not get Google Calendar service")
                 return []
                 
-            # Convert string times to datetime objects
+            # Convert string times to datetime objects with consistent timezone information
             start_dt = datetime.fromisoformat(start_datetime.replace('Z', '+00:00'))
             end_dt = datetime.fromisoformat(end_datetime.replace('Z', '+00:00'))
             
@@ -177,13 +177,16 @@ class GoogleCalendarService(CalendarServiceInterface):
             
             # Find available slots by removing busy periods
             available_slots = []
+            # Ensure current_start is timezone-aware
             current_start = start_dt
             
             for busy in busy_periods:
+                # Ensure we have timezone-aware datetimes with consistent timezone info
                 busy_start = datetime.fromisoformat(busy["start"].replace('Z', '+00:00'))
                 busy_end = datetime.fromisoformat(busy["end"].replace('Z', '+00:00'))
                 
                 # If there's time between current_start and busy_start, that's an available slot
+                # Ensure we're comparing datetime objects with consistent timezone information
                 if current_start < busy_start:
                     available_slots.append({
                         "start": current_start.isoformat(),
@@ -191,9 +194,11 @@ class GoogleCalendarService(CalendarServiceInterface):
                     })
                 
                 # Move current_start to after the busy period
+                # When using max() with datetimes, they must have the same tzinfo
                 current_start = max(current_start, busy_end)
             
             # Add any remaining time after the last busy period
+            # Again, ensure consistent timezone handling in comparison
             if current_start < end_dt:
                 available_slots.append({
                     "start": current_start.isoformat(),

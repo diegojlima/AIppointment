@@ -1,4 +1,21 @@
 # functions/appointment-booking/src/calendar_integration.py
+"""
+Core Calendar Integration Service
+
+This module provides the core calendar integration functionality for the AIppointment system.
+It serves as the primary interface for interacting with different calendar providers (Google, Outlook).
+
+Key responsibilities:
+- Provides a unified interface for working with different calendar providers
+- Handles core calendar operations (availability checking, appointment booking)
+- Manages calendar provider-specific implementations
+- Contains the core business logic for calendar operations
+
+This module is used by:
+1. The main application in main.py for direct calendar operations
+2. The Bedrock Agent adapter (bedrock_calendar_adapter.py) which formats requests/responses
+   for AWS Bedrock Agent compatibility
+"""
 import logging
 import os
 from datetime import datetime, timedelta
@@ -43,6 +60,16 @@ class CalendarIntegration:
         # Cache for calendar service instances
         self._services = {}
         
+        # Set the default calendar provider based on environment variable
+        default_provider = os.environ.get('DEFAULT_CALENDAR_PROVIDER', 'GOOGLE').upper()
+        try:
+            self._default_provider = CalendarProvider[default_provider]
+            logger.info(f"Default calendar provider set to {self._default_provider.value}")
+        except KeyError:
+            # Fallback to Google if the environment variable is not a valid provider
+            self._default_provider = CalendarProvider.GOOGLE
+            logger.info(f"Invalid calendar provider '{default_provider}'. Using {self._default_provider.value} as default")
+        
         logger.info("Calendar integration service initialized")
     
     def get_calendar_service(self, provider: CalendarProvider) -> CalendarServiceInterface:
@@ -55,33 +82,50 @@ class CalendarIntegration:
         Returns:
             An instance of the appropriate calendar service
         """
+        logger.info(f"Getting calendar service for provider: {provider.value}")
+        
         if provider in self._services:
+            logger.info(f"Using cached service for provider: {provider.value}")
             return self._services[provider]
         
         # Map provider enum to service class names
         provider_to_class = {
-            CalendarProvider.GOOGLE: "calendar_services.google_calendar.GoogleCalendarService",
+            CalendarProvider.GOOGLE: "calendar_services.google_calendar_v2.GoogleCalendarServiceV2",
             CalendarProvider.OUTLOOK: "calendar_services.outlook_calendar.OutlookCalendarService"
         }
         
         if provider not in provider_to_class:
-            raise ValueError(f"Unsupported calendar provider: {provider}")
+            error_msg = f"Unsupported calendar provider: {provider}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         
         # Dynamically import the service class
         service_class_path = provider_to_class[provider]
         module_path, class_name = service_class_path.rsplit('.', 1)
         
         try:
+            logger.info(f"Importing module: {module_path}")
             module = importlib.import_module(module_path)
+            logger.info(f"Getting class: {class_name}")
             service_class = getattr(module, class_name)
             
-            # Initialize the service
-            service = service_class(credentials_manager=self._get_credentials_manager(provider))
+            logger.info(f"Instantiating service: {class_name}")
+            service = service_class()
             self._services[provider] = service
+            logger.info(f"Successfully created calendar service for provider: {provider.value}")
             return service
-        except (ImportError, AttributeError) as e:
-            logger.error(f"Error importing calendar service {service_class_path}: {str(e)}")
+        except ImportError as e:
+            error_msg = f"Error importing calendar service module {module_path}: {str(e)}"
+            logger.error(error_msg)
             raise ValueError(f"Calendar service for provider {provider.value} is not available: {str(e)}")
+        except AttributeError as e:
+            error_msg = f"Error getting calendar service class {class_name}: {str(e)}"
+            logger.error(error_msg)
+            raise ValueError(f"Calendar service class {class_name} not found: {str(e)}")
+        except Exception as e:
+            error_msg = f"Unexpected error creating calendar service: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            raise ValueError(f"Error initializing calendar service for provider {provider.value}: {str(e)}")
     
     def _get_credentials_manager(self, provider: CalendarProvider):
         """
@@ -117,8 +161,11 @@ class CalendarIntegration:
         service = self.get_calendar_service(provider)
         
         # Convert date and times to provider-specific format
+        # Need full ISO format with seconds for Google Calendar (YYYY-MM-DDThh:mm:ss)
         start_datetime = f"{date}T{start_time}:00"
         end_datetime = f"{date}T{end_time}:00"
+        
+        logger.info(f"Formatted datetimes: {start_datetime} to {end_datetime}")
         
         # Get available slots from the calendar service
         available_slots = service.get_available_slots(start_datetime, end_datetime)
@@ -148,7 +195,15 @@ class CalendarIntegration:
         """
         logger.info(f"Booking appointment with {provider.value}: {appointment_details}")
         
-        service = self.get_calendar_service(provider)
+        try:
+            service = self.get_calendar_service(provider)
+        except ValueError as e:
+            logger.error(f"Failed to get calendar service for provider {provider.value}: {str(e)}")
+            return {
+                "success": False,
+                "error": f"Calendar service unavailable: {str(e)}",
+                "error_type": "ServiceUnavailable"
+            }
         
         # Extract appointment details
         date = appointment_details.get("date")
@@ -158,26 +213,49 @@ class CalendarIntegration:
         attendee_email = appointment_details.get("attendee_email")
         
         # Calculate end time based on duration
-        start_datetime = f"{date}T{time}:00"
+        # Adding proper timezone information (defaulting to UTC)
+        timezone_str = os.environ.get('DEFAULT_TIMEZONE', 'UTC')  # Use region name like 'UTC', 'America/Sao_Paulo'
+        timezone_offset = os.environ.get('DEFAULT_TIMEZONE_OFFSET', 'Z')  # Use 'Z' for UTC or offsets like '+03:00'
+        
+        logger.info(f"Using timezone: {timezone_str} (offset: {timezone_offset})")
+        
+        # Format with timezone info
+        start_datetime = f"{date}T{time}:00{timezone_offset}"
         
         # Convert to datetime object to add duration
-        dt_start = datetime.fromisoformat(start_datetime)
+        if timezone_offset == 'Z':
+            dt_start = datetime.fromisoformat(f"{date}T{time}:00+00:00")
+        else:
+            dt_start = datetime.fromisoformat(f"{date}T{time}:00{timezone_offset}")
+            
         dt_end = dt_start + timedelta(minutes=duration_minutes)
-        end_datetime = dt_end.isoformat()
+        
+        # Ensure timezone is preserved in end_datetime
+        if timezone_offset == 'Z':
+            end_datetime = dt_end.isoformat().replace('+00:00', 'Z')
+        else:
+            end_datetime = dt_end.isoformat()
         
         # Format appointment data for the service
         appointment_data = {
             "summary": purpose,
-            "start": {"dateTime": start_datetime},
-            "end": {"dateTime": end_datetime}
+            "start": {
+                "dateTime": start_datetime,
+                "timeZone": timezone_str
+            },
+            "end": {
+                "dateTime": end_datetime,
+                "timeZone": timezone_str
+            }
         }
         
-        # Add attendee if provided
+        # Always add the attendee - the service will handle it properly based on service account configuration
         if attendee_email:
             appointment_data["attendees"] = [{"email": attendee_email}]
         
         # Create the appointment
         try:
+            logger.info(f"Calling calendar service create_appointment with data: {appointment_data}")
             result = service.create_appointment(appointment_data)
             
             logger.info(f"Appointment booked successfully with ID: {result.get('id')}")
@@ -188,7 +266,7 @@ class CalendarIntegration:
             }
             
         except Exception as e:
-            logger.error(f"Failed to book appointment: {str(e)}")
+            logger.error(f"Failed to book appointment: {str(e)}", exc_info=True)
             return {
                 "success": False,
                 "error": str(e),
@@ -244,6 +322,16 @@ class CalendarIntegration:
         
         logger.info(f"Conflicts found for {date} at {time}")
         return True
+    
+    @property
+    def default_calendar_provider(self) -> CalendarProvider:
+        """
+        Get the default calendar provider
+        
+        Returns:
+            The default calendar provider enum value
+        """
+        return self._default_provider
     
     def get_next_available_slot(self, provider: CalendarProvider, 
                                date: str, time: str = None) -> Optional[Dict[str, str]]:

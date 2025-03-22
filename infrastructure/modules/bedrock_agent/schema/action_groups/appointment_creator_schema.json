@@ -138,7 +138,11 @@
           "time": { "type": "string", "format": "time" },
           "purpose": { "type": "string" },
           "durationMinutes": { "type": "integer", "default": 60 },
-          "userEmail": { "type": "string", "format": "email" }
+          "userEmail": { 
+            "type": "string", 
+            "format": "email", 
+            "description": "Optional email address. Not required for calendar integration." 
+          }
         },
         "required": ["userId", "date", "time", "purpose"]
       },

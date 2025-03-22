@@ -1,10 +1,18 @@
 """
-CalendarIntegrator action group for AWS Bedrock Agent
+Bedrock Calendar Adapter for AWS Bedrock Agent
 
-This action group handles:
-- Calendar API integration with Google Calendar or Microsoft Office 365
-- Managing time slot availability
-- Synchronizing appointment data
+This file serves as an adapter/wrapper between the core calendar integration service
+and AWS Bedrock Agent. It translates between the Bedrock Agent API format and our 
+internal calendar integration service.
+
+Key responsibilities:
+- Formats requests from Bedrock Agent into calls to our calendar service
+- Formats responses from our calendar service into Bedrock Agent compatible format
+- Handles AWS Bedrock Agent specific request/response formatting
+- Provides a Lambda handler for AWS Bedrock Agent integration
+
+This adapter uses the core CalendarIntegration class from calendar_integration.py
+which contains the actual business logic for calendar operations.
 """
 import json
 import logging
@@ -52,6 +60,10 @@ logger.addHandler(handler)
 class CalendarIntegrator:
     """
     Action group for calendar integration operations
+    
+    This class serves as an adapter between AWS Bedrock Agent and our core
+    calendar integration service. It handles formatting requests and responses
+    to be compatible with Bedrock Agent requirements.
     """
     
     def __init__(self, calendar_provider=None):
